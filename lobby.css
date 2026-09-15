@@ -1,0 +1,58 @@
+/* ============================================================
+   VoltRush — Lobby styles
+============================================================ */
+.lobby-shell { width: 100%; max-width: 760px; margin: auto; }
+
+.lobby-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.lobby-who { display: flex; align-items: center; gap: 10px; }
+.lobby-avatar { font-size: 1.6rem; background: rgba(255,255,255,0.08); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.lobby-name { font-size: 1rem; font-weight: 800; color: #e6ecf7; }
+.lobby-logout-btn { background: none; border: none; color: #6d8099; font-size: 0.76rem; cursor: pointer; text-decoration: underline; }
+
+/* ---- hero: the one bold moment on this page ---- */
+.lobby-hero {
+  position: relative; overflow: hidden; border-radius: 22px; padding: 34px 20px;
+  background: radial-gradient(circle at 30% 20%, #1e2a52 0%, #0b1226 75%);
+  border: 1px solid rgba(120,160,255,0.25); text-align: center; margin-bottom: 18px;
+}
+.lobby-hero-grid { position: absolute; inset: 0; opacity: 0.55; }
+.lobby-node {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #ffd166;
+  box-shadow: 0 0 12px 4px rgba(255,209,102,0.6); animation: lobbyPulse 2.6s ease-in-out infinite;
+}
+.n1 { top: 18%; left: 12%; } .n2 { top: 65%; left: 22%; animation-delay: .4s; }
+.n3 { top: 30%; left: 82%; animation-delay: .8s; } .n4 { top: 75%; left: 78%; animation-delay: 1.2s; }
+.n5 { top: 50%; left: 50%; animation-delay: 1.6s; }
+@keyframes lobbyPulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.6); } }
+.lobby-wire { position: absolute; height: 1px; background: linear-gradient(90deg, transparent, rgba(120,160,255,0.55), transparent); }
+.w1 { top: 30%; left: 10%; width: 40%; transform: rotate(8deg); }
+.w2 { top: 58%; left: 35%; width: 45%; transform: rotate(-6deg); }
+.w3 { top: 45%; left: 20%; width: 55%; transform: rotate(3deg); }
+
+.lobby-hero-content { position: relative; z-index: 1; }
+.lobby-hero-title { font-size: 1.25rem; font-weight: 800; color: #e6ecf7; margin-bottom: 14px; letter-spacing: 0.2px; }
+.lobby-crystal-pill {
+  display: inline-block; font-size: 1.1rem; font-weight: 800; color: #ffd166;
+  background: rgba(255,209,102,0.12); border: 1px solid rgba(255,209,102,0.35);
+  border-radius: 20px; padding: 7px 20px; margin-bottom: 18px;
+}
+.lobby-play-btn { display: block; margin: 0 auto; padding: 14px 40px; font-size: 1.05rem; }
+
+/* ---- nav grid: quiet, disciplined ---- */
+.lobby-nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.lobby-nav-card {
+  background: rgba(20,28,50,0.85); border: 1px solid rgba(120,160,255,0.2); border-radius: 16px;
+  padding: 16px 10px; text-align: center; cursor: pointer; color: #e6ecf7;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.lobby-nav-card:hover { transform: translateY(-2px); border-color: rgba(255,209,102,0.4); }
+.lobby-nav-icon { font-size: 1.6rem; margin-bottom: 6px; }
+.lobby-nav-title { font-size: 0.88rem; font-weight: 800; margin-bottom: 3px; }
+.lobby-nav-sub { font-size: 0.68rem; color: #9fb3d1; }
+
+.lobby-rules-btn { display: block; margin: 0 auto; }
+
+@media (max-width: 480px) {
+  .lobby-hero { padding: 26px 14px; }
+  .lobby-hero-title { font-size: 1.05rem; }
+}

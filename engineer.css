@@ -1,0 +1,5 @@
+/* ============================================================
+   VoltRush — Engineer page styles
+============================================================ */
+#engineerScreen .gacha-page-card { max-width: 760px; }
+#engineerScreen .gacha-item-sub { min-height: 34px; }

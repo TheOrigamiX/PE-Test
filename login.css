@@ -1,0 +1,17 @@
+/* ============================================================
+   VoltRush — Login styles
+============================================================ */
+.login-card { max-width: 420px; }
+.login-avatar-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0; }
+.login-avatar-btn {
+  width: 48px; height: 48px; font-size: 1.4rem; border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-avatar-btn.selected { border-color: #ffd166; background: rgba(255,209,102,0.18); box-shadow: 0 0 12px rgba(255,209,102,0.35); }
+.login-name-input {
+  width: 100%; padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06); color: #e6ecf7; font-size: 0.95rem; text-align: center;
+}
+.login-name-input:focus { outline: none; border-color: #ffd166; }
+.login-note { margin-top: 12px; font-size: 0.7rem; color: #6d8099; }

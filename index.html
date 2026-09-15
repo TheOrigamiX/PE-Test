@@ -6,7 +6,12 @@
 <title>⚡ VoltRush: บริหารพลังงานแบบสบายๆ</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<link rel="stylesheet" href="gacha.css">
+<link rel="stylesheet" href="gacha-core.css">
+<link rel="stylesheet" href="login.css">
+<link rel="stylesheet" href="lobby.css">
+<link rel="stylesheet" href="skin.css">
+<link rel="stylesheet" href="blueprint.css">
+<link rel="stylesheet" href="engineer.css">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -307,8 +312,9 @@
 </div>
 
 
-<div id="startScreen" class="screen">
+<div id="startScreen" class="screen hidden">
   <div class="start-card">
+    <button class="secondary-btn" style="margin-bottom:10px;" onclick="showLobbyScreen()">⬅ กลับสู่ล็อบบี้</button>
     <h1>⚡ VoltRush</h1>
     <p class="subtitle">เกมจำลองบริหารพลังงานเมือง เล่นสบายๆ อัพเกรดโรงไฟฟ้าและเมืองได้ไม่จำกัดระดับ</p>
 
@@ -337,17 +343,6 @@
       <div class="legend-chip">💨 กังหันลม</div><div class="legend-chip">🌊 พลังน้ำ</div><div class="legend-chip">🌋 ความร้อนใต้พิภพ</div>
       <div class="legend-chip">🌾 ชีวมวล</div><div class="legend-chip">🌀 คลื่น/น้ำขึ้นน้ำลง</div><div class="legend-chip">☢️ นิวเคลียร์</div>
       <div class="legend-chip">💠 ไฮโดรเจน</div><div class="legend-chip">⚛️ ฟิวชัน (อนาคต)</div><div class="legend-chip">🔋 แบตเตอรี่</div>
-    </div>
-
-    <div class="rules-box">
-      <h3>📋 กติกาเกม</h3>
-      <ul>
-        <li>เมื่อเริ่มเกม จะมี <b>บทเรียนพาชี้จุดจริงในเกม</b> ก่อน (ข้ามได้) แล้วมี <b>เวลาเตรียมตัว</b> ให้เปิด/ซื้อโรงไฟฟ้าล่วงหน้าก่อนนาฬิกาจริงเริ่มเดิน</li>
-        <li>เปิด/ปิดโรงไฟฟ้าด้วย <b>สวิตช์</b> ให้กำลังผลิตตามความต้องการของเมืองให้ทัน</li>
-        <li>แผงสถานะแสดงเหตุการณ์ปัจจุบัน → ถัดไป พร้อมนับถอยหลังตลอดเวลา และบางครั้งจะมี <b>เหตุการณ์พิเศษ</b> ทั้งดีและร้ายเกิดขึ้นแบบสุ่ม (ปรับความถี่ได้ด้านบน)</li>
-        <li>โรงไฟฟ้าขั้นสูงบางประเภทเสี่ยงเกิด<b>เหตุฉุกเฉิน</b> ต้องรีบปิดให้ทัน ไม่งั้นเกมจบทันที และโรงไฟฟ้าทุกประเภทอาจหยุดชั่วคราวหรือกำลังลดลงแบบสุ่มได้</li>
-        <li>อันดับคะแนนแยกตามเวลาเล่น และแยกช่วง วันนี้ / สัปดาห์นี้ / ตลอดกาล</li>
-      </ul>
     </div>
 
     <div class="start-actions">
@@ -1974,7 +1969,7 @@ function endGame(disasterMessage) {
   document.getElementById('bdFinal').textContent = final;
   document.getElementById('lbDurationLabel').textContent = durationLabel();
 
-  document.getElementById('nameInput').value = '';
+  document.getElementById('nameInput').value = (typeof getVoltrushProfileName === 'function') ? getVoltrushProfileName() : '';
   document.getElementById('nameInput').disabled = false;
   const saveBtn = document.getElementById('saveScoreBtn');
   if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'บันทึก'; }
@@ -2105,6 +2100,18 @@ function restartGame() {
   document.getElementById('startScreen').classList.remove('hidden');
 }
 </script>
-<script src="gacha.js"></script>
+<script src="gacha-core.js"></script>
+<script src="login.js"></script>
+<script src="lobby.js"></script>
+<script src="skin.js"></script>
+<script src="blueprint.js"></script>
+<script src="engineer.js"></script>
+<script>
+(function () {
+  var profile = (typeof getVoltrushProfile === 'function') ? getVoltrushProfile() : null;
+  if (profile && typeof showLobbyScreen === 'function') { showLobbyScreen(); }
+  else if (typeof showLoginScreen === 'function') { showLoginScreen(); }
+})();
+</script>
 </body>
 </html>

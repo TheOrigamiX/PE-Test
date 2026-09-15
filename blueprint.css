@@ -1,0 +1,5 @@
+/* ============================================================
+   VoltRush — Blueprint page styles
+============================================================ */
+#blueprintScreen .gacha-page-card { max-width: 760px; }
+.gacha-hint { font-size: 0.72rem; color: #9fb3d1; margin: -4px 0 10px; }
