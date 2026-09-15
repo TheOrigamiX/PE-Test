@@ -1,31 +1,29 @@
 /* ============================================================
-   VoltRush — Login (local profile, no password)
-   เก็บชื่อ/อวตารผู้เล่นไว้ใน localStorage เครื่องนี้เท่านั้น ไม่มีระบบ
-   รหัสผ่านหรือบัญชีกลาง (เกมนี้ไม่มี backend auth) ใช้เพื่อทักทาย,
-   จำชื่อไว้กรอกอันดับคะแนนอัตโนมัติ และเป็นประตูเข้าสู่ล็อบบี้
+   VoltRush — Login (Supabase Auth: email + password)
+   ชื่อ/อวตารเก็บใน user_metadata ของบัญชี Supabase (auth.users) ไม่ใช่
+   localStorage แล้ว ข้ามเครื่องได้ตราบใด login ด้วยอีเมลเดิม
 ============================================================ */
 
-const VOLTRUSH_PROFILE_KEY = 'voltrushProfileV1';
 const VOLTRUSH_AVATARS = ['👷', '🧑‍🔧', '👩‍🔬', '🧑‍🚀', '🦺', '⚡', '🌆', '🔋'];
 
+/* cache ผู้ใช้ปัจจุบันไว้ในตัวแปร sync เพราะ Supabase session check เป็น async
+   แต่โค้ดหลายจุด (เช่น prefill ชื่อท้ายเกม) ต้องอ่านค่าแบบ sync */
+let voltrushCurrentUser = null;
+
 function getVoltrushProfile() {
-  try {
-    const raw = localStorage.getItem(VOLTRUSH_PROFILE_KEY);
-    if (!raw) return null;
-    const p = JSON.parse(raw);
-    if (!p || !p.name) return null;
-    return p;
-  } catch (e) { return null; }
-}
-function saveVoltrushProfile(profile) {
-  localStorage.setItem(VOLTRUSH_PROFILE_KEY, JSON.stringify(profile));
+  if (!voltrushCurrentUser) return null;
+  const meta = voltrushCurrentUser.user_metadata || {};
+  return { name: meta.display_name || voltrushCurrentUser.email, avatar: meta.avatar || VOLTRUSH_AVATARS[0] };
 }
 function getVoltrushProfileName() {
   const p = getVoltrushProfile();
   return p ? p.name : '';
 }
-function logoutVoltrush() {
-  localStorage.removeItem(VOLTRUSH_PROFILE_KEY);
+async function logoutVoltrush() {
+  if (typeof sb === 'object' && sb && sb.auth) {
+    try { await sb.auth.signOut(); } catch (e) { console.error('ออกจากระบบล้มเหลว:', e); }
+  }
+  voltrushCurrentUser = null;
   showLoginScreen();
 }
 
@@ -46,21 +44,61 @@ function selectLoginAvatar(emoji) {
   });
 }
 
-function submitLogin() {
-  const input = document.getElementById('loginNameInput');
-  const name = input.value.trim();
-  if (!name) {
-    input.focus();
-    showToast('พิมพ์ชื่อผู้เล่นก่อนนะ');
-    return;
-  }
-  const existing = getVoltrushProfile();
-  saveVoltrushProfile({
-    name: name.slice(0, 16),
-    avatar: loginSelectedAvatar,
-    createdAt: existing ? existing.createdAt : Date.now()
-  });
-  showLobbyScreen();
+function setLoginBusy(busy, msg) {
+  const btnA = document.getElementById('loginSignInBtn');
+  const btnB = document.getElementById('loginSignUpBtn');
+  if (btnA) btnA.disabled = busy;
+  if (btnB) btnB.disabled = busy;
+  const status = document.getElementById('loginStatusMsg');
+  if (status) status.textContent = msg || '';
+}
+
+function readLoginFields() {
+  return {
+    email: document.getElementById('loginEmailInput').value.trim(),
+    password: document.getElementById('loginPasswordInput').value,
+    name: document.getElementById('loginNameInput').value.trim()
+  };
+}
+
+async function submitSignUp() {
+  if (!(typeof sb === 'object' && sb && sb.auth)) { showToast('ยังเชื่อมต่อ Supabase ไม่ได้ ลองรีเฟรชหน้า'); return; }
+  const f = readLoginFields();
+  if (!f.name) { showToast('พิมพ์ชื่อผู้เล่นก่อนนะ'); return; }
+  if (!f.email || !f.password) { showToast('กรอกอีเมลกับรหัสผ่านก่อนนะ'); return; }
+  if (f.password.length < 6) { showToast('รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร'); return; }
+  setLoginBusy(true, 'กำลังสมัครสมาชิก...');
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: f.email,
+      password: f.password,
+      options: { data: { display_name: f.name.slice(0, 16), avatar: loginSelectedAvatar } }
+    });
+    if (error) throw error;
+    if (data.session) {
+      voltrushCurrentUser = data.user;
+      showLobbyScreen();
+    } else {
+      showToast('สมัครสำเร็จ! เช็คอีเมลเพื่อยืนยันตัวตน แล้วค่อยเข้าสู่ระบบ');
+    }
+  } catch (e) {
+    showToast('สมัครไม่สำเร็จ: ' + (e.message || 'ลองใหม่อีกครั้ง'));
+  } finally { setLoginBusy(false, ''); }
+}
+
+async function submitSignIn() {
+  if (!(typeof sb === 'object' && sb && sb.auth)) { showToast('ยังเชื่อมต่อ Supabase ไม่ได้ ลองรีเฟรชหน้า'); return; }
+  const f = readLoginFields();
+  if (!f.email || !f.password) { showToast('กรอกอีเมลกับรหัสผ่านก่อนนะ'); return; }
+  setLoginBusy(true, 'กำลังเข้าสู่ระบบ...');
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email: f.email, password: f.password });
+    if (error) throw error;
+    voltrushCurrentUser = data.user;
+    showLobbyScreen();
+  } catch (e) {
+    showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || 'ตรวจอีเมล/รหัสผ่านอีกครั้ง'));
+  } finally { setLoginBusy(false, ''); }
 }
 
 function buildLoginScreenUI() {
@@ -71,15 +109,18 @@ function buildLoginScreenUI() {
   screen.innerHTML =
     '<div class="start-card login-card">' +
     '<h1>⚡ VoltRush</h1>' +
-    '<p class="subtitle">ก่อนเข้าล็อบบี้ ตั้งชื่อผู้บริหารเมืองของคุณก่อน</p>' +
+    '<p class="subtitle">เข้าสู่ระบบด้วยอีเมล หรือสมัครสมาชิกใหม่ (ผู้เล่นใหม่ต้องตั้งชื่อ+เลือกอวตารด้วย)</p>' +
     '<div class="login-avatar-row" id="loginAvatarRow">' +
     VOLTRUSH_AVATARS.map((a, i) => '<button type="button" class="login-avatar-btn' + (i === 0 ? ' selected' : '') + '" data-avatar="' + a + '" onclick="selectLoginAvatar(\'' + a + '\')">' + a + '</button>').join('') +
     '</div>' +
-    '<input type="text" id="loginNameInput" class="login-name-input" placeholder="ใส่ชื่อของคุณ..." maxlength="16">' +
+    '<input type="text" id="loginNameInput" class="login-name-input" placeholder="ชื่อผู้เล่น (ใช้ตอนสมัครสมาชิกเท่านั้น)" maxlength="16">' +
+    '<input type="email" id="loginEmailInput" class="login-name-input" placeholder="อีเมล" style="margin-top:8px;">' +
+    '<input type="password" id="loginPasswordInput" class="login-name-input" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)" style="margin-top:8px;">' +
     '<div class="start-actions" style="margin-top:14px;">' +
-    '<button class="primary-btn" onclick="submitLogin()">🚀 เข้าสู่ล็อบบี้</button>' +
+    '<button class="primary-btn" id="loginSignInBtn" onclick="submitSignIn()">🚀 เข้าสู่ระบบ</button>' +
+    '<button class="secondary-btn" id="loginSignUpBtn" onclick="submitSignUp()">✨ สมัครสมาชิกใหม่</button>' +
     '</div>' +
-    '<p class="login-note">ไม่ต้องใช้รหัสผ่าน ข้อมูลนี้เก็บไว้ในเครื่องนี้เท่านั้น</p>' +
+    '<p class="login-note" id="loginStatusMsg"></p>' +
     '</div>';
   document.body.appendChild(screen);
 }
@@ -87,15 +128,32 @@ function buildLoginScreenUI() {
 function showLoginScreen() {
   buildLoginScreenUI();
   hideVoltrushHubScreens();
-  const profile = getVoltrushProfile();
-  const input = document.getElementById('loginNameInput');
-  input.value = profile ? profile.name : '';
-  loginSelectedAvatar = profile ? profile.avatar : VOLTRUSH_AVATARS[0];
-  document.querySelectorAll('#loginAvatarRow .login-avatar-btn').forEach(b => {
-    b.classList.toggle('selected', b.dataset.avatar === loginSelectedAvatar);
-  });
   document.getElementById('loginScreen').classList.remove('hidden');
-  input.focus();
+  document.getElementById('loginEmailInput').focus();
+}
+
+/* เรียกจาก index.html ตอนโหลดหน้าเสร็จ เช็ค session ที่ล็อกอินค้างไว้ก่อน
+   ค่อยตัดสินใจว่าจะโชว์ล็อบบี้ (login ค้างอยู่) หรือหน้า login */
+async function initVoltrushAuthBootstrap() {
+  buildLoginScreenUI();
+  if (!(typeof sb === 'object' && sb && sb.auth)) { showLoginScreen(); return; }
+  try {
+    const { data } = await sb.auth.getSession();
+    if (data && data.session && data.session.user) {
+      voltrushCurrentUser = data.session.user;
+      showLobbyScreen();
+    } else {
+      showLoginScreen();
+    }
+  } catch (e) {
+    console.error('เช็ค session ล้มเหลว:', e);
+    showLoginScreen();
+  }
+  if (sb && sb.auth && sb.auth.onAuthStateChange) {
+    sb.auth.onAuthStateChange((event, session) => {
+      voltrushCurrentUser = session ? session.user : null;
+    });
+  }
 }
 
 buildLoginScreenUI();

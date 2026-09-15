@@ -14,4 +14,5 @@
   background: rgba(255,255,255,0.06); color: #e6ecf7; font-size: 0.95rem; text-align: center;
 }
 .login-name-input:focus { outline: none; border-color: #ffd166; }
-.login-note { margin-top: 12px; font-size: 0.7rem; color: #6d8099; }
+.login-note { margin-top: 12px; font-size: 0.7rem; color: #ffd166; min-height: 14px; }
+.login-card .start-actions button:disabled { opacity: 0.5; cursor: wait; }

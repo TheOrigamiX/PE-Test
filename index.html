@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>⚡ VoltRush: บริหารพลังงานแบบสบายๆ</title>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="supabase-client.js"></script>
 <link rel="stylesheet" href="gacha-core.css">
@@ -525,49 +523,38 @@
 <div id="toastContainer"></div>
 
 <script>
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBHVM6bttnfPlctL7TwAFwAiW5Xs9qEFOM",
-  authDomain: "energy-debe5.firebaseapp.com",
-  databaseURL: "https://energy-debe5-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "energy-debe5",
-  storageBucket: "energy-debe5.firebasestorage.app",
-  messagingSenderId: "802290003784",
-  appId: "1:802290003784:web:6c3c776f13d372874b8d7d",
-  measurementId: "G-T1KXRYCEQF"
-};
-let fbDb = null;
-let FIREBASE_ENABLED = false;
-try {
-  if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
-    if (!firebase.apps || !firebase.apps.length) { firebase.initializeApp(FIREBASE_CONFIG); }
-    fbDb = firebase.database();
-    FIREBASE_ENABLED = true;
-    console.log('Firebase Realtime Database เชื่อมต่อสำเร็จ');
-  } else {
-    console.warn('ไม่พบ Firebase SDK หรือยังไม่ได้ตั้งค่า — ใช้ localStorage แทน');
-  }
-} catch (e) { FIREBASE_ENABLED = false; console.error('Firebase init ล้มเหลว:', e); }
+const SUPABASE_ENABLED = (typeof sb === 'object' && sb && sb.auth);
+if (!SUPABASE_ENABLED) console.warn('ไม่พบ Supabase client — เช็คว่า supabase-client.js โหลดสำเร็จ');
 
 async function saveScoreRemote(entry, sec) {
-  if (!FIREBASE_ENABLED) return;
+  if (!SUPABASE_ENABLED) return;
   try {
-    const durationTag = sec === 0 ? 'infinite' : String(sec);
-    const clean = JSON.parse(JSON.stringify(entry));
-    await fbDb.ref('leaderboards/' + durationTag).push(clean);
-    console.log('บันทึกคะแนนขึ้น Firebase สำเร็จ');
-  } catch (e) { console.error('บันทึกคะแนนขึ้น Firebase ล้มเหลว (เช็ค Realtime Database Rules):', e); }
+    const { data: userData } = await sb.auth.getUser();
+    const uid = userData && userData.user ? userData.user.id : null;
+    if (!uid) { console.warn('ยังไม่ได้ login ผ่าน Supabase — ข้ามการบันทึกอันดับคะแนนออนไลน์'); return; }
+    const row = { user_id: uid, name: entry.name, score: entry.score, duration_sec: sec, elapsed: entry.elapsed || null };
+    const { error } = await sb.from('leaderboards').insert(row);
+    if (error) throw error;
+    console.log('บันทึกคะแนนขึ้น Supabase สำเร็จ');
+  } catch (e) { console.error('บันทึกคะแนนขึ้น Supabase ล้มเหลว:', e); }
 }
 async function loadLeaderboardRemote(sec, period) {
-  if (!FIREBASE_ENABLED) return null;
+  if (!SUPABASE_ENABLED) return null;
   try {
-    const durationTag = sec === 0 ? 'infinite' : String(sec);
-    const snap = await fbDb.ref('leaderboards/' + durationTag).orderByChild('score').limitToLast(100).once('value');
-    let list = [];
-    snap.forEach(child => { list.push(child.val()); });
+    const { data, error } = await sb.from('leaderboards')
+      .select('name,score,elapsed,duration_sec,created_at')
+      .eq('duration_sec', sec)
+      .order('score', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    let list = (data || []).map(row => {
+      const d = getShiftedDate(new Date(row.created_at));
+      return { name: row.name, score: row.score, elapsed: row.elapsed, date: getDateKey(d), week: getWeekKey(d) };
+    });
     list = filterByPeriod(list, period);
     list.sort((a, b) => b.score - a.score);
     return list.slice(0, 100);
-  } catch (e) { console.error('โหลด Leaderboard จาก Firebase ล้มเหลว:', e); return null; }
+  } catch (e) { console.error('โหลด Leaderboard จาก Supabase ล้มเหลว:', e); return null; }
 }
 
 /* ==================================================================
@@ -2005,7 +1992,7 @@ function saveScore() {
   let list = loadAllScores(sec);
   list.push(entry);
   saveAllScores(sec, list);
-  if (FIREBASE_ENABLED) saveScoreRemote(entry, sec);
+  if (SUPABASE_ENABLED) saveScoreRemote(entry, sec);
   renderLeaderboard();
   scoreSavedThisRound = true;
   nameInput.disabled = true;
@@ -2081,7 +2068,7 @@ async function renderLeaderboardView() {
   const ol = document.getElementById('lbViewList');
   ol.innerHTML = '<li style="color:#9fb3d1;">กำลังโหลด...</li>';
   let list = null;
-  if (FIREBASE_ENABLED) { list = await loadLeaderboardRemote(lbViewDuration, lbViewPeriod); }
+  if (SUPABASE_ENABLED) { list = await loadLeaderboardRemote(lbViewDuration, lbViewPeriod); }
   if (!list) { list = filterByPeriod(loadAllScores(lbViewDuration), lbViewPeriod).sort((a, b) => b.score - a.score).slice(0, 100); }
   ol.innerHTML = '';
   if (list.length === 0) { ol.innerHTML = '<li style="color:#9fb3d1;">ยังไม่มีคะแนนบันทึกไว้ในช่วงนี้</li>'; return; }
@@ -2110,8 +2097,7 @@ function restartGame() {
 <script src="engineer.js"></script>
 <script>
 (function () {
-  var profile = (typeof getVoltrushProfile === 'function') ? getVoltrushProfile() : null;
-  if (profile && typeof showLobbyScreen === 'function') { showLobbyScreen(); }
+  if (typeof initVoltrushAuthBootstrap === 'function') { initVoltrushAuthBootstrap(); }
   else if (typeof showLoginScreen === 'function') { showLoginScreen(); }
 })();
 </script>
