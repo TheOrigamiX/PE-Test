@@ -6,6 +6,9 @@
 
 const VOLTRUSH_AVATARS = ['👷', '🧑‍🔧', '👩‍🔬', '🧑‍🚀', '🦺', '⚡', '🌆', '🔋'];
 
+/* ล้าง localStorage ของระบบ login เก่า (ก่อนย้ายมา Supabase Auth) ไม่ใช้แล้ว */
+try { localStorage.removeItem('voltrushProfileV1'); } catch (e) {}
+
 /* cache ผู้ใช้ปัจจุบันไว้ในตัวแปร sync เพราะ Supabase session check เป็น async
    แต่โค้ดหลายจุด (เช่น prefill ชื่อท้ายเกม) ต้องอ่านค่าแบบ sync */
 let voltrushCurrentUser = null;
