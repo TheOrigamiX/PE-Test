@@ -27,6 +27,7 @@ async function logoutVoltrush() {
     try { await sb.auth.signOut(); } catch (e) { console.error('ออกจากระบบล้มเหลว:', e); }
   }
   voltrushCurrentUser = null;
+  if (typeof gachaDefaultState === 'function') gacha = gachaDefaultState(); /* เคลียร์ของในหน่วยความจำ ไม่มีอะไรค้างในเครื่อง */
   showLoginScreen();
 }
 
@@ -80,6 +81,7 @@ async function submitSignUp() {
     if (error) throw error;
     if (data.session) {
       voltrushCurrentUser = data.user;
+      if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
       showLobbyScreen();
     } else {
       showToast('สมัครสำเร็จ! เช็คอีเมลเพื่อยืนยันตัวตน แล้วค่อยเข้าสู่ระบบ');
@@ -98,6 +100,7 @@ async function submitSignIn() {
     const { data, error } = await sb.auth.signInWithPassword({ email: f.email, password: f.password });
     if (error) throw error;
     voltrushCurrentUser = data.user;
+    if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
     showLobbyScreen();
   } catch (e) {
     showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || 'ตรวจอีเมล/รหัสผ่านอีกครั้ง'));
@@ -144,6 +147,7 @@ async function initVoltrushAuthBootstrap() {
     const { data } = await sb.auth.getSession();
     if (data && data.session && data.session.user) {
       voltrushCurrentUser = data.session.user;
+      if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.session.user.id);
       showLobbyScreen();
     } else {
       showLoginScreen();

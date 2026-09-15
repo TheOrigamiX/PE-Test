@@ -9,7 +9,6 @@
    หน้ากาชาแต่ละแบบ (สกิน / พิมพ์เขียว / วิศวกร) แยกไฟล์ของตัวเอง
 ============================================================ */
 
-const GACHA_STATE_KEY = 'voltrushGachaStateV1';
 const GACHA_PULL_COST = 100;
 const GACHA_PULL10_COST = 900;
 const GACHA_PITY_SOFT = 40;
@@ -57,7 +56,7 @@ const GACHA_ITEMS = {
 const GACHA_ITEM_MAP = {};
 Object.keys(GACHA_ITEMS).forEach(banner => GACHA_ITEMS[banner].forEach(it => { GACHA_ITEM_MAP[it.id] = Object.assign({ banner: banner }, it); }));
 
-/* ---------- state + migration-safe load ---------- */
+/* ---------- state: เก็บบน Supabase (player_state) ไม่แตะ localStorage ---------- */
 function gachaDefaultState() {
   return {
     crystals: 300,
@@ -68,25 +67,45 @@ function gachaDefaultState() {
     equippedEngineer: null
   };
 }
-function loadGachaState() {
+function gachaMergeWithDefault(saved) {
   const def = gachaDefaultState();
-  try {
-    const raw = localStorage.getItem(GACHA_STATE_KEY);
-    if (!raw) return def;
-    const saved = JSON.parse(raw);
-    /* รวมของเก่ากับ default เสมอ กัน field ใหม่หายไปถ้า schema เปลี่ยนอนาคต */
-    return {
-      crystals: typeof saved.crystals === 'number' ? saved.crystals : def.crystals,
-      pity: Object.assign({}, def.pity, saved.pity || {}),
-      shards: Object.assign({}, def.shards, saved.shards || {}),
-      owned: Object.assign({}, def.owned, saved.owned || {}),
-      equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
-      equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer
-    };
-  } catch (e) { return def; }
+  if (!saved) return def;
+  return {
+    crystals: typeof saved.crystals === 'number' ? saved.crystals : def.crystals,
+    pity: Object.assign({}, def.pity, saved.pity || {}),
+    shards: Object.assign({}, def.shards, saved.shards || {}),
+    owned: Object.assign({}, def.owned, saved.owned || {}),
+    equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
+    equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer
+  };
 }
-let gacha = loadGachaState();
-function saveGachaState() { localStorage.setItem(GACHA_STATE_KEY, JSON.stringify(gacha)); }
+let gacha = gachaDefaultState();
+
+/* เรียกหลัง login สำเร็จ (จาก login.js) เพื่อดึงข้อมูลผู้เล่นจาก Supabase มาแทนค่า default */
+async function gachaLoadFromCloud(userId) {
+  if (!(typeof sb === 'object' && sb && sb.auth) || !userId) { gacha = gachaDefaultState(); return; }
+  try {
+    const { data, error } = await sb.from('player_state').select('gacha').eq('user_id', userId).maybeSingle();
+    if (error) throw error;
+    if (data && data.gacha) {
+      gacha = gachaMergeWithDefault(data.gacha);
+    } else {
+      gacha = gachaDefaultState();
+      const { error: insErr } = await sb.from('player_state').insert({ user_id: userId, gacha: gacha });
+      if (insErr) throw insErr;
+    }
+  } catch (e) { console.error('โหลดข้อมูลผู้เล่นจาก Supabase ล้มเหลว:', e); gacha = gachaDefaultState(); }
+}
+async function saveGachaState() {
+  if (!(typeof sb === 'object' && sb && sb.auth) || !(typeof voltrushCurrentUser === 'object' && voltrushCurrentUser)) {
+    console.warn('ยังไม่ได้ login — ข้อมูลผู้เล่นจะไม่ถูกบันทึก');
+    return;
+  }
+  try {
+    const { error } = await sb.from('player_state').upsert({ user_id: voltrushCurrentUser.id, gacha: gacha, updated_at: new Date().toISOString() });
+    if (error) throw error;
+  } catch (e) { console.error('บันทึกข้อมูลผู้เล่นขึ้น Supabase ล้มเหลว:', e); }
+}
 
 /* ---------- roll logic ---------- */
 function gachaRollRarity(banner) {
