@@ -23,6 +23,7 @@ function getVoltrushProfileName() {
   return p ? p.name : '';
 }
 async function logoutVoltrush() {
+  if (typeof gachaFlushPendingSave === 'function') await gachaFlushPendingSave();
   if (typeof sb === 'object' && sb && sb.auth) {
     try { await sb.auth.signOut(); } catch (e) { console.error('ออกจากระบบล้มเหลว:', e); }
   }
@@ -71,21 +72,29 @@ async function submitSignUp() {
   if (!f.name) { showToast('พิมพ์ชื่อผู้เล่นก่อนนะ'); return; }
   if (!f.email || !f.password) { showToast('กรอกอีเมลกับรหัสผ่านก่อนนะ'); return; }
   if (f.password.length < 6) { showToast('รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร'); return; }
+  const username = f.name.slice(0, 16);
   setLoginBusy(true, 'กำลังสมัครสมาชิก...');
   try {
+    const { data: taken } = await sb.from('usernames').select('username').eq('username', username).maybeSingle();
+    if (taken) { showToast('ชื่อผู้ใช้นี้ถูกใช้แล้ว ลองตั้งชื่ออื่น'); return; }
+
     const { data, error } = await sb.auth.signUp({
       email: f.email,
       password: f.password,
-      options: { data: { display_name: f.name.slice(0, 16), avatar: loginSelectedAvatar } }
+      options: { data: { display_name: username, avatar: loginSelectedAvatar } }
     });
     if (error) throw error;
-    if (data.session) {
-      voltrushCurrentUser = data.user;
-      if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
-      showLobbyScreen();
-    } else {
-      showToast('สมัครสำเร็จ! เช็คอีเมลเพื่อยืนยันตัวตน แล้วค่อยเข้าสู่ระบบ');
+    if (!data.session) {
+      showToast('สมัครสำเร็จ! แต่ยังลงทะเบียนชื่อผู้ใช้ไม่ได้จนกว่าจะยืนยันอีเมลก่อน (แนะนำปิด "Confirm email" ใน Supabase ถ้าไม่อยากรอ) หลังยืนยันแล้ว เข้าสู่ระบบด้วยอีเมลครั้งแรกเพื่อให้ระบบลงทะเบียนชื่อผู้ใช้ให้อัตโนมัติ');
+      return;
     }
+
+    const { error: mapErr } = await sb.from('usernames').insert({ username: username, user_id: data.user.id, email: f.email });
+    if (mapErr) { console.error('ลงทะเบียนชื่อผู้ใช้ล้มเหลว:', mapErr); showToast('สมัครสำเร็จ แต่ลงชื่อผู้ใช้ไม่สำเร็จ — เข้าสู่ระบบด้วยอีเมลไปก่อนได้'); }
+
+    voltrushCurrentUser = data.user;
+    if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
+    showLobbyScreen();
   } catch (e) {
     showToast('สมัครไม่สำเร็จ: ' + (e.message || 'ลองใหม่อีกครั้ง'));
   } finally { setLoginBusy(false, ''); }
@@ -94,16 +103,33 @@ async function submitSignUp() {
 async function submitSignIn() {
   if (!(typeof sb === 'object' && sb && sb.auth)) { showToast('ยังเชื่อมต่อ Supabase ไม่ได้ ลองรีเฟรชหน้า'); return; }
   const f = readLoginFields();
-  if (!f.email || !f.password) { showToast('กรอกอีเมลกับรหัสผ่านก่อนนะ'); return; }
+  if (!f.name || !f.password) { showToast('กรอกชื่อผู้ใช้กับรหัสผ่านก่อนนะ'); return; }
   setLoginBusy(true, 'กำลังเข้าสู่ระบบ...');
   try {
-    const { data, error } = await sb.auth.signInWithPassword({ email: f.email, password: f.password });
+    const { data: mapped } = await sb.from('usernames').select('email').eq('username', f.name).maybeSingle();
+    let email = mapped ? mapped.email : null;
+    if (!email) {
+      if (f.name.indexOf('@') === -1) {
+        showToast('ไม่พบชื่อผู้ใช้นี้ ถ้าเพิ่งสมัครและรอยืนยันอีเมล ให้พิมพ์อีเมลแทนชื่อผู้ใช้ในการเข้าสู่ระบบครั้งแรก');
+        return;
+      }
+      email = f.name; /* เผื่อบัญชีที่ยังไม่ได้ลงทะเบียนชื่อผู้ใช้ (รอยืนยันอีเมลตอนสมัคร) */
+    }
+    const { data, error } = await sb.auth.signInWithPassword({ email: email, password: f.password });
     if (error) throw error;
     voltrushCurrentUser = data.user;
+
+    if (!mapped) {
+      const meta = data.user.user_metadata || {};
+      const uname = meta.display_name || email.split('@')[0];
+      const { error: mapErr } = await sb.from('usernames').insert({ username: uname, user_id: data.user.id, email: email });
+      if (mapErr) console.warn('ลงทะเบียนชื่อผู้ใช้อัตโนมัติไม่สำเร็จ:', mapErr);
+    }
+
     if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
     showLobbyScreen();
   } catch (e) {
-    showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || 'ตรวจอีเมล/รหัสผ่านอีกครั้ง'));
+    showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || 'ตรวจชื่อผู้ใช้/รหัสผ่านอีกครั้ง'));
   } finally { setLoginBusy(false, ''); }
 }
 
@@ -115,12 +141,12 @@ function buildLoginScreenUI() {
   screen.innerHTML =
     '<div class="start-card login-card">' +
     '<h1>⚡ VoltRush</h1>' +
-    '<p class="subtitle">เข้าสู่ระบบด้วยอีเมล หรือสมัครสมาชิกใหม่ (ผู้เล่นใหม่ต้องตั้งชื่อ+เลือกอวตารด้วย)</p>' +
+    '<p class="subtitle">เข้าสู่ระบบด้วย <b>ชื่อผู้ใช้ + รหัสผ่าน</b> หรือสมัครสมาชิกใหม่ด้วยชื่อ+อีเมล+รหัสผ่าน</p>' +
     '<div class="login-avatar-row" id="loginAvatarRow">' +
     VOLTRUSH_AVATARS.map((a, i) => '<button type="button" class="login-avatar-btn' + (i === 0 ? ' selected' : '') + '" data-avatar="' + a + '" onclick="selectLoginAvatar(\'' + a + '\')">' + a + '</button>').join('') +
     '</div>' +
-    '<input type="text" id="loginNameInput" class="login-name-input" placeholder="ชื่อผู้เล่น (ใช้ตอนสมัครสมาชิกเท่านั้น)" maxlength="16">' +
-    '<input type="email" id="loginEmailInput" class="login-name-input" placeholder="อีเมล" style="margin-top:8px;">' +
+    '<input type="text" id="loginNameInput" class="login-name-input" placeholder="ชื่อผู้ใช้ (ใช้ตอนเข้าสู่ระบบด้วย)" maxlength="16">' +
+    '<input type="email" id="loginEmailInput" class="login-name-input" placeholder="อีเมล (กรอกเฉพาะตอนสมัครสมาชิก)" style="margin-top:8px;">' +
     '<input type="password" id="loginPasswordInput" class="login-name-input" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)" style="margin-top:8px;">' +
     '<div class="start-actions" style="margin-top:14px;">' +
     '<button class="primary-btn" id="loginSignInBtn" onclick="submitSignIn()">🚀 เข้าสู่ระบบ</button>' +

@@ -46,3 +46,25 @@ on player_state for update
 to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+-- แมปชื่อผู้ใช้ -> อีเมล เพื่อให้หน้า login ใช้แค่ "ชื่อ + รหัสผ่าน" ได้
+-- (Supabase Auth ปกติบังคับ login ด้วยอีเมล เลยต้องมีตารางนี้ช่วยแปลงชื่อ -> อีเมลก่อนยิง signIn)
+-- หมายเหตุ: ตารางนี้ต้องให้ "อ่านได้แม้ยังไม่ login" เพื่อเอาอีเมลไปยิง signIn ได้
+-- ผลข้างเคียง: คนอื่นที่รู้/เดา username ถูก จะเห็นอีเมลที่ผูกไว้ได้ (เหมาะกับเกมเล่นสนุก ไม่เหมาะกับระบบที่ต้องการความเป็นส่วนตัวสูง)
+create table if not exists usernames (
+  username text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  email text not null
+);
+
+alter table usernames enable row level security;
+
+create policy "anyone can look up email by username to sign in"
+on usernames for select
+to anon, authenticated
+using (true);
+
+create policy "user can register their own username mapping"
+on usernames for insert
+to authenticated
+with check (auth.uid() = user_id);
