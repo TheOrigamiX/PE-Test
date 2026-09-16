@@ -47,20 +47,32 @@ const GACHA_ITEMS = {
     { id: 'bp_fusion', rarity: 'legendary', plantKey: 'fusion', statBonusPct: 40, name: 'พิมพ์เขียวฟิวชันสมบูรณ์แบบ' }
   ],
   engineer: [
-    { id: 'eng_r4_trainee', rarity: 'r4', name: 'ช่างฝึกหัด', skillName: 'มือใหม่ไฟแรง', perk: 'upgradeDiscount', value: 0.05, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 5%' },
-    { id: 'eng_r4_clean', rarity: 'r4', name: 'วิศวกรพลังงานสะอาด', skillName: 'พลังงานหมุนเวียน', perk: 'incomeBoost', value: 0.08, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 8%' },
-    { id: 'eng_r4_safety', rarity: 'r4', name: 'หัวหน้าฝ่ายความปลอดภัย', skillName: 'โปรโตคอลปลอดภัย', perk: 'hazardReduce', value: 0.20, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 20%' },
-    { id: 'eng_r4_analyst', rarity: 'r4', name: 'นักวิเคราะห์กริด', skillName: 'วิเคราะห์เชิงลึก', perk: 'allRounder', value: 0.06, desc: 'เพิ่มรายได้ 6% และลดค่าอัพเกรด 6%' },
-    { id: 'eng_r5_director', rarity: 'r5', name: 'ผู้อำนวยการโรงไฟฟ้าในตำนาน', skillName: 'วิสัยทัศน์ผู้นำ', perk: 'allRounder', value: 0.15, desc: 'เพิ่มรายได้ 15% และลดค่าอัพเกรด 15%' },
-    { id: 'eng_r5_crisis', rarity: 'r5', name: 'ผู้เชี่ยวชาญภาวะวิกฤต', skillName: 'ควบคุมสถานการณ์', perk: 'hazardReduce', value: 0.45, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 45%' }
+    { id: 'eng_r4_trainee', rarity: 'r4', name: 'ช่างฝึกหัด', skillName: 'มือใหม่ไฟแรง', perk: 'upgradeDiscount', value: 0.05, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 5%',
+      activeSkill: { name: 'ซ้อมมือ', desc: 'ลดความต้องการไฟฟ้าในเมืองชั่วคราว 8%', cooldownSec: 45, durationSec: 12, demandMult: 0.92, supplyMult: 1 } },
+    { id: 'eng_r4_clean', rarity: 'r4', name: 'วิศวกรพลังงานสะอาด', skillName: 'พลังงานหมุนเวียน', perk: 'incomeBoost', value: 0.08, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 8%',
+      activeSkill: { name: 'พลังเสริมชั่วคราว', desc: 'เพิ่มกำลังผลิตไฟฟ้ารวมชั่วคราว 10%', cooldownSec: 45, durationSec: 12, demandMult: 1, supplyMult: 1.10 } },
+    { id: 'eng_r4_safety', rarity: 'r4', name: 'หัวหน้าฝ่ายความปลอดภัย', skillName: 'โปรโตคอลปลอดภัย', perk: 'hazardReduce', value: 0.20, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 20%',
+      activeSkill: { name: 'ล็อกดาวน์ฉุกเฉิน', desc: 'ลดความต้องการไฟฟ้าชั่วคราว 12%', cooldownSec: 50, durationSec: 10, demandMult: 0.88, supplyMult: 1 } },
+    { id: 'eng_r4_analyst', rarity: 'r4', name: 'นักวิเคราะห์กริด', skillName: 'วิเคราะห์เชิงลึก', perk: 'allRounder', value: 0.06, desc: 'เพิ่มรายได้ 6% และลดค่าอัพเกรด 6%',
+      activeSkill: { name: 'ปรับสมดุลกริด', desc: 'ลดความต้องการ 6% และเพิ่มกำลังผลิต 6%', cooldownSec: 50, durationSec: 12, demandMult: 0.94, supplyMult: 1.06 } },
+    { id: 'eng_r5_director', rarity: 'r5', name: 'ผู้อำนวยการโรงไฟฟ้าในตำนาน', skillName: 'วิสัยทัศน์ผู้นำ', perk: 'allRounder', value: 0.15, desc: 'เพิ่มรายได้ 15% และลดค่าอัพเกรด 15%',
+      activeSkill: { name: 'คำสั่งผู้นำ', desc: 'ลดความต้องการ 15% และเพิ่มกำลังผลิต 15%', cooldownSec: 60, durationSec: 15, demandMult: 0.85, supplyMult: 1.15 } },
+    { id: 'eng_r5_crisis', rarity: 'r5', name: 'ผู้เชี่ยวชาญภาวะวิกฤต', skillName: 'ควบคุมสถานการณ์', perk: 'hazardReduce', value: 0.45, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 45%',
+      activeSkill: { name: 'ภาวะฉุกเฉินเต็มรูปแบบ', desc: 'ลดความต้องการไฟฟ้าชั่วคราว 20%', cooldownSec: 55, durationSec: 15, demandMult: 0.80, supplyMult: 1 } }
   ],
   weapon: [
-    { id: 'wpn_r4_wrench', rarity: 'r4', name: 'ประแจอเนกประสงค์', skillName: 'ซ่อมไว', perk: 'upgradeDiscount', value: 0.06, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 6%' },
-    { id: 'wpn_r4_inspect', rarity: 'r4', name: 'ชุดตรวจสอบดิจิทัล', skillName: 'ตรวจจับแม่นยำ', perk: 'incomeBoost', value: 0.06, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 6%' },
-    { id: 'wpn_r4_fireproof', rarity: 'r4', name: 'เกราะกันไฟ', skillName: 'ทนไฟ', perk: 'hazardReduce', value: 0.15, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 15%' },
-    { id: 'wpn_r4_tablet', rarity: 'r4', name: 'แท็บเล็ตวิเคราะห์', skillName: 'ข้อมูลเรียลไทม์', perk: 'allRounder', value: 0.04, desc: 'เพิ่มรายได้ 4% และลดค่าอัพเกรด 4%' },
-    { id: 'wpn_r5_wrench', rarity: 'r5', name: 'ประแจในตำนานของผู้ก่อตั้ง', skillName: 'มรดกผู้บุกเบิก', perk: 'allRounder', value: 0.12, desc: 'เพิ่มรายได้ 12% และลดค่าอัพเกรด 12%' },
-    { id: 'wpn_r5_shield', rarity: 'r5', name: 'เกราะควอนตัมป้องกันภัย', skillName: 'สนามพลังควอนตัม', perk: 'hazardReduce', value: 0.40, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 40%' }
+    { id: 'wpn_r4_wrench', rarity: 'r4', name: 'ประแจอเนกประสงค์', skillName: 'ซ่อมไว', perk: 'upgradeDiscount', value: 0.06, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 6%',
+      activeSkill: { name: 'ซ่อมด่วน', desc: 'เพิ่มกำลังผลิตชั่วคราว 8%', cooldownSec: 40, durationSec: 10, demandMult: 1, supplyMult: 1.08 } },
+    { id: 'wpn_r4_inspect', rarity: 'r4', name: 'ชุดตรวจสอบดิจิทัล', skillName: 'ตรวจจับแม่นยำ', perk: 'incomeBoost', value: 0.06, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 6%',
+      activeSkill: { name: 'ตรวจสอบเร่งด่วน', desc: 'ลดความต้องการไฟฟ้าชั่วคราว 8%', cooldownSec: 40, durationSec: 10, demandMult: 0.92, supplyMult: 1 } },
+    { id: 'wpn_r4_fireproof', rarity: 'r4', name: 'เกราะกันไฟ', skillName: 'ทนไฟ', perk: 'hazardReduce', value: 0.15, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 15%',
+      activeSkill: { name: 'กันไฟฉุกเฉิน', desc: 'ลดความต้องการ 4% และเพิ่มกำลังผลิต 6%', cooldownSec: 45, durationSec: 10, demandMult: 0.96, supplyMult: 1.06 } },
+    { id: 'wpn_r4_tablet', rarity: 'r4', name: 'แท็บเล็ตวิเคราะห์', skillName: 'ข้อมูลเรียลไทม์', perk: 'allRounder', value: 0.04, desc: 'เพิ่มรายได้ 4% และลดค่าอัพเกรด 4%',
+      activeSkill: { name: 'วิเคราะห์ด่วน', desc: 'ลดความต้องการ 6% และเพิ่มกำลังผลิต 6%', cooldownSec: 45, durationSec: 10, demandMult: 0.94, supplyMult: 1.06 } },
+    { id: 'wpn_r5_wrench', rarity: 'r5', name: 'ประแจในตำนานของผู้ก่อตั้ง', skillName: 'มรดกผู้บุกเบิก', perk: 'allRounder', value: 0.12, desc: 'เพิ่มรายได้ 12% และลดค่าอัพเกรด 12%',
+      activeSkill: { name: 'ปาฏิหาริย์ผู้ก่อตั้ง', desc: 'เพิ่มกำลังผลิตชั่วคราว 18%', cooldownSec: 55, durationSec: 14, demandMult: 1, supplyMult: 1.18 } },
+    { id: 'wpn_r5_shield', rarity: 'r5', name: 'เกราะควอนตัมป้องกันภัย', skillName: 'สนามพลังควอนตัม', perk: 'hazardReduce', value: 0.40, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 40%',
+      activeSkill: { name: 'สนามป้องกันเต็มพลัง', desc: 'ลดความต้องการไฟฟ้าชั่วคราว 18%', cooldownSec: 55, durationSec: 14, demandMult: 0.82, supplyMult: 1 } }
   ]
 };
 const GACHA_ITEM_MAP = {};
@@ -215,9 +227,11 @@ function gachaGearBonusTotals() {
 function gachaDefaultState() {
   return {
     crystals: 300,
+    parts: 0,
     pity: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
     shards: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
     owned: { style: [], blueprint: [], engineer: [], weapon: [] },
+    levels: { engineer: {}, weapon: {} },
     equippedSkins: {},
     equippedEngineer: null,
     equippedWeapon: null,
@@ -230,9 +244,14 @@ function gachaMergeWithDefault(saved) {
   if (!saved) return def;
   return {
     crystals: typeof saved.crystals === 'number' ? saved.crystals : def.crystals,
+    parts: typeof saved.parts === 'number' ? saved.parts : def.parts,
     pity: Object.assign({}, def.pity, saved.pity || {}),
     shards: Object.assign({}, def.shards, saved.shards || {}),
     owned: Object.assign({}, def.owned, saved.owned || {}),
+    levels: {
+      engineer: Object.assign({}, def.levels.engineer, (saved.levels && saved.levels.engineer) || {}),
+      weapon: Object.assign({}, def.levels.weapon, (saved.levels && saved.levels.weapon) || {})
+    },
     equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
     equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer,
     equippedWeapon: (saved.equippedWeapon !== undefined) ? saved.equippedWeapon : def.equippedWeapon,
@@ -241,6 +260,32 @@ function gachaMergeWithDefault(saved) {
   };
 }
 let gacha = gachaDefaultState();
+
+const GACHA_MAX_LEVEL = 10;
+function gachaGetLevel(banner, id) { return (gacha.levels && gacha.levels[banner] && gacha.levels[banner][id]) || 1; }
+function gachaLevelUpCost(level) { return level * 5; }
+function gachaLevelUpUnit(banner, id) {
+  const level = gachaGetLevel(banner, id);
+  if (level >= GACHA_MAX_LEVEL) { showToast('เลเวลสูงสุดแล้ว (Lv.' + GACHA_MAX_LEVEL + ')'); return; }
+  const cost = gachaLevelUpCost(level);
+  if (gacha.parts < cost) { showToast('ชิ้นส่วนไม่พอ ต้องการ ' + cost + ' ชิ้น (มี ' + gacha.parts + ')'); return; }
+  gacha.parts -= cost;
+  gacha.levels[banner] = gacha.levels[banner] || {};
+  gacha.levels[banner][id] = level + 1;
+  saveGachaState();
+  if (typeof sndUpgrade === 'function') sndUpgrade();
+  showToast('⬆️ เลเวลอัพ! ตอนนี้ Lv.' + (level + 1));
+  if (typeof renderEngineerScreen === 'function') renderEngineerScreen();
+  if (typeof renderWeaponScreen === 'function') renderWeaponScreen();
+}
+/* ดรอปชิ้นส่วนอัพเกรดหลังจบเกม (ใช้กับทั้งวิศวกรและอาวุธ) ตามคะแนน */
+function gachaAwardPartsDrop(finalScore) {
+  const amt = Math.max(3, Math.floor(finalScore / 30) + Math.floor(Math.random() * 6));
+  gacha.parts += amt;
+  saveGachaState();
+  showToast('🔩 ได้ชิ้นส่วนอัพเกรด ' + amt + ' ชิ้น');
+  return amt;
+}
 
 /* เรียกหลัง login สำเร็จ (จาก login.js) เพื่อดึงข้อมูลผู้เล่นจาก Supabase มาแทนค่า default */
 async function gachaLoadFromCloud(userId) {
@@ -374,11 +419,17 @@ function getGachaBlueprintBonus(plantKey) {
 }
 function gachaEquippedEngineerItem() {
   if (!gacha.equippedEngineer) return null;
-  return GACHA_ITEM_MAP[gacha.equippedEngineer] || null;
+  const base = GACHA_ITEM_MAP[gacha.equippedEngineer];
+  if (!base) return null;
+  const level = gachaGetLevel('engineer', base.id);
+  return Object.assign({}, base, { value: base.value * (1 + (level - 1) * 0.1), level: level });
 }
 function gachaEquippedWeaponItem() {
   if (!gacha.equippedWeapon) return null;
-  return GACHA_ITEM_MAP[gacha.equippedWeapon] || null;
+  const base = GACHA_ITEM_MAP[gacha.equippedWeapon];
+  if (!base) return null;
+  const level = gachaGetLevel('weapon', base.id);
+  return Object.assign({}, base, { value: base.value * (1 + (level - 1) * 0.1), level: level });
 }
 function getGachaUpgradeDiscount() {
   const e = gachaEquippedEngineerItem();

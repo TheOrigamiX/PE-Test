@@ -1,0 +1,25 @@
+/* ============================================================
+   VoltRush — Active skill HUD styles
+============================================================ */
+#activeSkillHud {
+  position: fixed; bottom: 16px; right: 16px; z-index: 40;
+  display: flex; gap: 8px;
+}
+.skill-hud-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 68px; height: 68px; border-radius: 16px; cursor: pointer;
+  background: linear-gradient(135deg, #ffd166, #ff7b54); border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  color: #1a1208; font-weight: 800;
+}
+.skill-hud-btn:disabled, .skill-hud-btn.on-cooldown {
+  background: rgba(255,255,255,0.08); color: #9fb3d1; cursor: not-allowed; border-color: rgba(255,255,255,0.12);
+}
+.skill-hud-icon { font-size: 1.3rem; }
+.skill-hud-label { font-size: 0.55rem; line-height: 1.1; text-align: center; padding: 0 2px; max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-hud-cd { font-size: 0.6rem; font-weight: 900; margin-top: 2px; }
+
+@media (max-width: 480px) {
+  #activeSkillHud { bottom: 10px; right: 10px; }
+  .skill-hud-btn { width: 56px; height: 56px; }
+}

@@ -15,7 +15,7 @@ function buildEngineerScreenUI() {
       '<h1 style="margin:0;font-size:1.2rem;">👷 วิศวกรประจำโรงไฟฟ้า</h1>' +
       '<span style="width:1px;"></span>' +
     '</div>' +
-    '<div class="gacha-crystal-bar">💎 <span id="engCrystalVal">0</span> Volt Crystal</div>' +
+    '<div class="gacha-crystal-bar">💎 <span id="engCrystalVal">0</span> Volt Crystal • 🔩 <span id="engPartsVal">0</span> ชิ้นส่วน</div>' +
     '<div class="gacha-pity-row">' +
       '<span id="engPityText"></span> • เศษสะสม: <span id="engShardVal">0</span>' +
       '<button class="gacha-redeem-btn" onclick="gachaRedeemShards(ENGINEER_BANNER); renderEngineerScreen();">แลกเศษ → 💎</button>' +
@@ -32,6 +32,7 @@ function buildEngineerScreenUI() {
 
 function renderEngineerScreen() {
   document.getElementById('engCrystalVal').textContent = gacha.crystals;
+  document.getElementById('engPartsVal').textContent = gacha.parts;
   const pityNow = gacha.pity[ENGINEER_BANNER];
   const left = STAR_PITY_HARD - pityNow;
   document.getElementById('engPityText').textContent = 'การันตี 5★ ในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + STAR_PITY_HARD + ')';
@@ -45,7 +46,14 @@ function renderEngineerScreen() {
     let actionHtml = '';
     if (owned) {
       const equipped = gacha.equippedEngineer === it.id;
-      actionHtml = '<button class="gacha-equip-btn ' + (equipped ? 'equipped' : '') + '" onclick="gachaEquipEngineer(\'' + it.id + '\')">' + (equipped ? '✓ มอบหมายอยู่' : 'มอบหมาย') + '</button>';
+      const level = gachaGetLevel(ENGINEER_BANNER, it.id);
+      const cost = gachaLevelUpCost(level);
+      const maxed = level >= GACHA_MAX_LEVEL;
+      actionHtml =
+        '<div class="gacha-item-level">Lv.' + level + (maxed ? ' (สูงสุด)' : '') + '</div>' +
+        '<div class="gacha-item-skill"><b>⚡ ' + it.activeSkill.name + '</b> — ' + it.activeSkill.desc + '</div>' +
+        '<button class="gacha-equip-btn ' + (equipped ? 'equipped' : '') + '" onclick="gachaEquipEngineer(\'' + it.id + '\')">' + (equipped ? '✓ มอบหมายอยู่' : 'มอบหมาย') + '</button>' +
+        (maxed ? '' : '<button class="gear-discard-btn" style="background:rgba(110,231,168,0.15);color:#6ee7a8;margin-top:4px;width:100%;" onclick="gachaLevelUpUnit(\'' + ENGINEER_BANNER + '\',\'' + it.id + '\')">เลเวลอัพ (🔩' + cost + ')</button>');
     }
     return '<div class="gacha-item-card ' + (owned ? '' : 'locked') + '" style="--rarity-color:' + color + '">' +
       '<div class="gacha-item-icon">' + (owned ? '👷' : '🔒') + '</div>' +
