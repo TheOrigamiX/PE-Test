@@ -47,14 +47,64 @@ const GACHA_ITEMS = {
     { id: 'bp_fusion', rarity: 'legendary', plantKey: 'fusion', statBonusPct: 40, name: 'พิมพ์เขียวฟิวชันสมบูรณ์แบบ' }
   ],
   engineer: [
-    { id: 'eng_common', rarity: 'common', name: 'ช่างฝึกหัด', perk: 'upgradeDiscount', value: 0.05, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 5%' },
-    { id: 'eng_rare', rarity: 'rare', name: 'วิศวกรพลังงานสะอาด', perk: 'incomeBoost', value: 0.10, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 10%' },
-    { id: 'eng_epic', rarity: 'epic', name: 'หัวหน้าฝ่ายความปลอดภัย', perk: 'hazardReduce', value: 0.35, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 35%' },
-    { id: 'eng_legendary', rarity: 'legendary', name: 'ผู้อำนวยการโรงไฟฟ้าในตำนาน', perk: 'allRounder', value: 0.15, desc: 'เพิ่มรายได้ 15% และลดค่าอัพเกรด 15%' }
+    { id: 'eng_r4_trainee', rarity: 'r4', name: 'ช่างฝึกหัด', skillName: 'มือใหม่ไฟแรง', perk: 'upgradeDiscount', value: 0.05, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 5%' },
+    { id: 'eng_r4_clean', rarity: 'r4', name: 'วิศวกรพลังงานสะอาด', skillName: 'พลังงานหมุนเวียน', perk: 'incomeBoost', value: 0.08, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 8%' },
+    { id: 'eng_r4_safety', rarity: 'r4', name: 'หัวหน้าฝ่ายความปลอดภัย', skillName: 'โปรโตคอลปลอดภัย', perk: 'hazardReduce', value: 0.20, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 20%' },
+    { id: 'eng_r4_analyst', rarity: 'r4', name: 'นักวิเคราะห์กริด', skillName: 'วิเคราะห์เชิงลึก', perk: 'allRounder', value: 0.06, desc: 'เพิ่มรายได้ 6% และลดค่าอัพเกรด 6%' },
+    { id: 'eng_r5_director', rarity: 'r5', name: 'ผู้อำนวยการโรงไฟฟ้าในตำนาน', skillName: 'วิสัยทัศน์ผู้นำ', perk: 'allRounder', value: 0.15, desc: 'เพิ่มรายได้ 15% และลดค่าอัพเกรด 15%' },
+    { id: 'eng_r5_crisis', rarity: 'r5', name: 'ผู้เชี่ยวชาญภาวะวิกฤต', skillName: 'ควบคุมสถานการณ์', perk: 'hazardReduce', value: 0.45, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 45%' }
+  ],
+  weapon: [
+    { id: 'wpn_r4_wrench', rarity: 'r4', name: 'ประแจอเนกประสงค์', skillName: 'ซ่อมไว', perk: 'upgradeDiscount', value: 0.06, desc: 'ลดค่าอัพเกรดโรงไฟฟ้า 6%' },
+    { id: 'wpn_r4_inspect', rarity: 'r4', name: 'ชุดตรวจสอบดิจิทัล', skillName: 'ตรวจจับแม่นยำ', perk: 'incomeBoost', value: 0.06, desc: 'เพิ่มรายได้จากทุกโรงไฟฟ้า 6%' },
+    { id: 'wpn_r4_fireproof', rarity: 'r4', name: 'เกราะกันไฟ', skillName: 'ทนไฟ', perk: 'hazardReduce', value: 0.15, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 15%' },
+    { id: 'wpn_r4_tablet', rarity: 'r4', name: 'แท็บเล็ตวิเคราะห์', skillName: 'ข้อมูลเรียลไทม์', perk: 'allRounder', value: 0.04, desc: 'เพิ่มรายได้ 4% และลดค่าอัพเกรด 4%' },
+    { id: 'wpn_r5_wrench', rarity: 'r5', name: 'ประแจในตำนานของผู้ก่อตั้ง', skillName: 'มรดกผู้บุกเบิก', perk: 'allRounder', value: 0.12, desc: 'เพิ่มรายได้ 12% และลดค่าอัพเกรด 12%' },
+    { id: 'wpn_r5_shield', rarity: 'r5', name: 'เกราะควอนตัมป้องกันภัย', skillName: 'สนามพลังควอนตัม', perk: 'hazardReduce', value: 0.40, desc: 'ลดโอกาสเกิดเหตุฉุกเฉิน 40%' }
   ]
 };
 const GACHA_ITEM_MAP = {};
 Object.keys(GACHA_ITEMS).forEach(banner => GACHA_ITEMS[banner].forEach(it => { GACHA_ITEM_MAP[it.id] = Object.assign({ banner: banner }, it); }));
+
+/* ---------- ระบบดาว (4★/5★) สำหรับ banner ตัวละคร+อาวุธเท่านั้น (สกิน/พิมพ์เขียวยังใช้ระบบเดิม) ---------- */
+const STAR_BANNERS = ['engineer', 'weapon'];
+function gachaIsStarBanner(banner) { return STAR_BANNERS.indexOf(banner) !== -1; }
+const STAR_PITY_SOFT = 15;
+const STAR_PITY_HARD = 20;
+const STAR_WEIGHTS = { r4: 94, r5: 6 };
+const STAR_LABELS = { r4: '4 ดาว', r5: '5 ดาว' };
+const STAR_COLORS = { r4: '#b388ff', r5: '#ffd166' };
+const STAR_SHARD_GAIN = { r4: 5, r5: 25 };
+/* ตัวที่ "ขึ้นเวท" ปัจจุบัน — ได้ 5★ ครั้งไหน (ไม่ว่าจะปะการันตีหรือสุ่มได้เอง) จะได้ตัวนี้เลย
+   แก้ค่าตรงนี้เพื่อหมุนเวทตัวละคร/อาวุธตัวต่อไปได้ */
+const GACHA_FEATURED = { engineer: 'eng_r5_director', weapon: 'wpn_r5_wrench' };
+
+function gachaRollStarRarity(banner) {
+  gacha.pity[banner]++;
+  if (gacha.pity[banner] >= STAR_PITY_HARD) { gacha.pity[banner] = 0; return 'r5'; }
+  const weights = Object.assign({}, STAR_WEIGHTS);
+  if (gacha.pity[banner] >= STAR_PITY_SOFT) {
+    const boost = (gacha.pity[banner] - STAR_PITY_SOFT + 1) * 12;
+    weights.r5 += boost;
+    weights.r4 = Math.max(5, weights.r4 - boost);
+  }
+  const total = weights.r4 + weights.r5;
+  const r = Math.random() * total;
+  if (r < weights.r5) { gacha.pity[banner] = 0; return 'r5'; }
+  return 'r4';
+}
+function gachaPickStarItem(banner, rarity) {
+  if (rarity === 'r5' && GACHA_FEATURED[banner]) {
+    const featured = GACHA_ITEM_MAP[GACHA_FEATURED[banner]];
+    if (featured) return featured;
+  }
+  const pool = GACHA_ITEMS[banner].filter(it => it.rarity === rarity);
+  if (pool.length === 0) return GACHA_ITEMS[banner][0];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+/* รวม label/สี ของทั้งสองระบบไว้ที่เดียว ให้โค้ด reveal/equip ทั่วไปเรียกได้โดยไม่ต้องรู้ว่า banner ไหนใช้ระบบไหน */
+const ALL_RARITY_LABELS = Object.assign({}, GACHA_RARITY_LABELS, STAR_LABELS);
+const ALL_RARITY_COLORS = Object.assign({}, GACHA_RARITY_COLORS, STAR_COLORS);
 
 /* ---------- ของสวมใส่ภาคสนาม (echo-equivalent) — เฟส 4 ---------- */
 const GEAR_SLOTS = ['slot1', 'slot2', 'slot3', 'slot4'];
@@ -165,11 +215,12 @@ function gachaGearBonusTotals() {
 function gachaDefaultState() {
   return {
     crystals: 300,
-    pity: { style: 0, blueprint: 0, engineer: 0 },
-    shards: { style: 0, blueprint: 0, engineer: 0 },
-    owned: { style: [], blueprint: [], engineer: [] },
+    pity: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
+    shards: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
+    owned: { style: [], blueprint: [], engineer: [], weapon: [] },
     equippedSkins: {},
     equippedEngineer: null,
+    equippedWeapon: null,
     gearInventory: [],
     equippedGear: { slot1: null, slot2: null, slot3: null, slot4: null }
   };
@@ -184,6 +235,7 @@ function gachaMergeWithDefault(saved) {
     owned: Object.assign({}, def.owned, saved.owned || {}),
     equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
     equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer,
+    equippedWeapon: (saved.equippedWeapon !== undefined) ? saved.equippedWeapon : def.equippedWeapon,
     gearInventory: Array.isArray(saved.gearInventory) ? saved.gearInventory : def.gearInventory,
     equippedGear: Object.assign({}, def.equippedGear, saved.equippedGear || {})
   };
@@ -261,10 +313,17 @@ function gachaPickItem(banner, rarity) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 function gachaRollOnce(banner) {
-  const rarity = gachaRollRarity(banner);
-  const item = gachaPickItem(banner, rarity);
+  let rarity, item;
+  if (gachaIsStarBanner(banner)) {
+    rarity = gachaRollStarRarity(banner);
+    item = gachaPickStarItem(banner, rarity);
+  } else {
+    rarity = gachaRollRarity(banner);
+    item = gachaPickItem(banner, rarity);
+  }
   const isDup = gacha.owned[banner].indexOf(item.id) !== -1;
-  if (isDup) { gacha.shards[banner] += GACHA_SHARD_GAIN[rarity]; }
+  const shardGain = gachaIsStarBanner(banner) ? STAR_SHARD_GAIN[rarity] : GACHA_SHARD_GAIN[rarity];
+  if (isDup) { gacha.shards[banner] += shardGain; }
   else { gacha.owned[banner].push(item.id); }
   return { item: item, rarity: rarity, isDup: isDup };
 }
@@ -317,24 +376,34 @@ function gachaEquippedEngineerItem() {
   if (!gacha.equippedEngineer) return null;
   return GACHA_ITEM_MAP[gacha.equippedEngineer] || null;
 }
+function gachaEquippedWeaponItem() {
+  if (!gacha.equippedWeapon) return null;
+  return GACHA_ITEM_MAP[gacha.equippedWeapon] || null;
+}
 function getGachaUpgradeDiscount() {
   const e = gachaEquippedEngineerItem();
+  const w = gachaEquippedWeaponItem();
   let v = 0;
   if (e && (e.perk === 'upgradeDiscount' || e.perk === 'allRounder')) v += e.value;
+  if (w && (w.perk === 'upgradeDiscount' || w.perk === 'allRounder')) v += w.value;
   v += gachaGearBonusTotals().upgradeDiscount;
   return Math.min(0.9, v);
 }
 function getGachaHazardMult() {
   const e = gachaEquippedEngineerItem();
+  const w = gachaEquippedWeaponItem();
   let reduce = 0;
   if (e && e.perk === 'hazardReduce') reduce += e.value;
+  if (w && w.perk === 'hazardReduce') reduce += w.value;
   reduce += gachaGearBonusTotals().hazardResist;
   return 1 - Math.min(0.9, reduce);
 }
 function getGachaIncomeMult() {
   const e = gachaEquippedEngineerItem();
+  const w = gachaEquippedWeaponItem();
   let boost = 0;
   if (e && (e.perk === 'incomeBoost' || e.perk === 'allRounder')) boost += e.value;
+  if (w && (w.perk === 'incomeBoost' || w.perk === 'allRounder')) boost += w.value;
   boost += gachaGearBonusTotals().incomeBoost;
   return 1 + boost;
 }
@@ -369,18 +438,24 @@ function gachaEquipEngineer(id) {
   if (typeof renderEngineerScreen === 'function') renderEngineerScreen();
   showToast(gacha.equippedEngineer ? '✅ มอบหมายวิศวกรแล้ว!' : 'ยกเลิกการมอบหมายวิศวกรแล้ว');
 }
+function gachaEquipWeapon(id) {
+  gacha.equippedWeapon = (gacha.equippedWeapon === id) ? null : id;
+  saveGachaState();
+  if (typeof renderWeaponScreen === 'function') renderWeaponScreen();
+  showToast(gacha.equippedWeapon ? '✅ ติดตั้งอาวุธแล้ว!' : 'ถอดอาวุธแล้ว');
+}
 
 /* ---------- reveal modal (shared, one instance reused by every page) ---------- */
 function gachaShowReveal(results, banner) {
   const overlay = document.getElementById('gachaRevealOverlay');
   const container = document.getElementById('gachaRevealCards');
   container.innerHTML = results.map((r, i) => {
-    const color = GACHA_RARITY_COLORS[r.rarity];
-    const icon = r.item.icon || (banner === 'engineer' ? '👷' : (banner === 'blueprint' ? '⚡' : '🎁'));
+    const color = ALL_RARITY_COLORS[r.rarity];
+    const icon = r.item.icon || (banner === 'engineer' ? '👷' : (banner === 'weapon' ? '🔧' : (banner === 'blueprint' ? '⚡' : '🎁')));
     return '<div class="gacha-reveal-card" style="--rarity-color:' + color + ';animation-delay:' + (i * 0.12) + 's">' +
       '<div class="gacha-reveal-icon">' + icon + '</div>' +
-      '<div class="gacha-reveal-rarity">' + GACHA_RARITY_LABELS[r.rarity] + '</div>' +
-      '<div class="gacha-reveal-name">' + r.item.name + '</div>' +
+      '<div class="gacha-reveal-rarity">' + ALL_RARITY_LABELS[r.rarity] + '</div>' +
+      '<div class="gacha-reveal-name">' + r.item.name + (r.item.skillName ? ' — ' + r.item.skillName : '') + '</div>' +
       (r.isDup ? '<div class="gacha-reveal-dup">ซ้ำ → +เศษ</div>' : '<div class="gacha-reveal-new">ใหม่!</div>') +
       '</div>';
   }).join('');
@@ -392,6 +467,7 @@ function closeGachaReveal() {
   if (typeof renderSkinScreen === 'function' && !document.getElementById('skinScreen').classList.contains('hidden')) renderSkinScreen();
   if (typeof renderBlueprintScreen === 'function' && !document.getElementById('blueprintScreen').classList.contains('hidden')) renderBlueprintScreen();
   if (typeof renderEngineerScreen === 'function' && !document.getElementById('engineerScreen').classList.contains('hidden')) renderEngineerScreen();
+  if (typeof renderWeaponScreen === 'function' && !document.getElementById('weaponScreen').classList.contains('hidden')) renderWeaponScreen();
 }
 
 function initGachaRevealOverlay() {

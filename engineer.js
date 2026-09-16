@@ -1,5 +1,5 @@
 /* ============================================================
-   VoltRush — Engineer page (gacha banner: engineer)
+   VoltRush — Engineer page (gacha banner: engineer, ระบบ 4★/5★)
 ============================================================ */
 const ENGINEER_BANNER = 'engineer';
 
@@ -24,7 +24,7 @@ function buildEngineerScreenUI() {
       '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullOne(ENGINEER_BANNER)">สุ่ม 1 ครั้ง (💎' + GACHA_PULL_COST + ')</button>' +
       '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullTen(ENGINEER_BANNER)">สุ่ม 10 ครั้ง (💎' + GACHA_PULL10_COST + ')</button>' +
     '</div>' +
-    '<p class="gacha-hint">มอบหมายวิศวกร 1 คนต่อรอบ เพื่อรับเพอร์กประจำตัว กดซ้ำเพื่อยกเลิกมอบหมาย</p>' +
+    '<p class="gacha-hint">มอบหมายวิศวกร 1 คนต่อรอบ เพื่อรับสกิลประจำตัว กดซ้ำเพื่อยกเลิกมอบหมาย — ตัวที่ขึ้นเวท (5★): <b>' + GACHA_ITEM_MAP[GACHA_FEATURED.engineer].name + '</b></p>' +
     '<div class="gacha-collection-grid" id="engCollectionGrid"></div>' +
     '</div>';
   document.body.appendChild(screen);
@@ -33,15 +33,15 @@ function buildEngineerScreenUI() {
 function renderEngineerScreen() {
   document.getElementById('engCrystalVal').textContent = gacha.crystals;
   const pityNow = gacha.pity[ENGINEER_BANNER];
-  const left = GACHA_PITY_HARD - pityNow;
-  document.getElementById('engPityText').textContent = 'การันตีตำนานในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + GACHA_PITY_HARD + ')';
+  const left = STAR_PITY_HARD - pityNow;
+  document.getElementById('engPityText').textContent = 'การันตี 5★ ในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + STAR_PITY_HARD + ')';
   document.getElementById('engShardVal').textContent = gacha.shards[ENGINEER_BANNER];
 
   const grid = document.getElementById('engCollectionGrid');
   const items = GACHA_ITEMS[ENGINEER_BANNER];
   grid.innerHTML = items.map(it => {
     const owned = gacha.owned[ENGINEER_BANNER].indexOf(it.id) !== -1;
-    const color = GACHA_RARITY_COLORS[it.rarity];
+    const color = ALL_RARITY_COLORS[it.rarity];
     let actionHtml = '';
     if (owned) {
       const equipped = gacha.equippedEngineer === it.id;
@@ -50,8 +50,8 @@ function renderEngineerScreen() {
     return '<div class="gacha-item-card ' + (owned ? '' : 'locked') + '" style="--rarity-color:' + color + '">' +
       '<div class="gacha-item-icon">' + (owned ? '👷' : '🔒') + '</div>' +
       '<div class="gacha-item-name">' + it.name + '</div>' +
-      '<div class="gacha-item-sub">' + it.desc + '</div>' +
-      '<div class="gacha-item-rarity">' + GACHA_RARITY_LABELS[it.rarity] + '</div>' +
+      '<div class="gacha-item-sub">' + (owned ? ('<b>' + it.skillName + '</b> — ' + it.desc) : '???') + '</div>' +
+      '<div class="gacha-item-rarity">' + ALL_RARITY_LABELS[it.rarity] + '</div>' +
       actionHtml +
       '</div>';
   }).join('');
