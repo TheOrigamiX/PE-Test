@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="skin.css">
 <link rel="stylesheet" href="blueprint.css">
 <link rel="stylesheet" href="engineer.css">
+<link rel="stylesheet" href="gear.css">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -1947,6 +1948,7 @@ function endGame(disasterMessage) {
   const blackout = Math.round(bd.blackoutPenalty);
   const final = currentScore();
   if (typeof gachaAwardCrystals === 'function') gachaAwardCrystals(final);
+  if (typeof gachaAwardGearDrop === 'function') gachaAwardGearDrop(final);
 
   document.getElementById('finalScoreVal').textContent = final;
   document.getElementById('bdSatisfaction').textContent = sat;
@@ -2095,6 +2097,7 @@ function restartGame() {
 <script src="skin.js"></script>
 <script src="blueprint.js"></script>
 <script src="engineer.js"></script>
+<script src="gear.js"></script>
 <script>
 (function () {
   if (typeof initVoltrushAuthBootstrap === 'function') { initVoltrushAuthBootstrap(); }

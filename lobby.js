@@ -34,9 +34,11 @@ function refreshLobbyStats() {
   const skinCountEl = document.getElementById('lobbySkinCount');
   const bpCountEl = document.getElementById('lobbyBlueprintCount');
   const engCountEl = document.getElementById('lobbyEngineerCount');
+  const gearCountEl = document.getElementById('lobbyGearCount');
   if (skinCountEl) skinCountEl.textContent = lobbyBannerCountLabel('style');
   if (bpCountEl) bpCountEl.textContent = lobbyBannerCountLabel('blueprint');
   if (engCountEl) engCountEl.textContent = lobbyBannerCountLabel('engineer');
+  if (gearCountEl) gearCountEl.textContent = ((gacha.gearInventory || []).length) + ' ชิ้น';
 }
 
 function buildLobbyScreenUI() {
@@ -77,6 +79,10 @@ function buildLobbyScreenUI() {
         '<button class="lobby-nav-card" onclick="showEngineerScreen()">' +
           '<div class="lobby-nav-icon">👷</div><div class="lobby-nav-title">วิศวกร</div>' +
           '<div class="lobby-nav-sub" id="lobbyEngineerCount">0/0 ชิ้น</div>' +
+        '</button>' +
+        '<button class="lobby-nav-card" onclick="showGearScreen()">' +
+          '<div class="lobby-nav-icon">🎒</div><div class="lobby-nav-title">ของสวมใส่</div>' +
+          '<div class="lobby-nav-sub" id="lobbyGearCount">0 ชิ้น</div>' +
         '</button>' +
         '<button class="lobby-nav-card" onclick="openLeaderboardFromLobby()">' +
           '<div class="lobby-nav-icon">🏆</div><div class="lobby-nav-title">อันดับคะแนน</div>' +

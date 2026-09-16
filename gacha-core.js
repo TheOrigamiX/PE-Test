@@ -56,6 +56,111 @@ const GACHA_ITEMS = {
 const GACHA_ITEM_MAP = {};
 Object.keys(GACHA_ITEMS).forEach(banner => GACHA_ITEMS[banner].forEach(it => { GACHA_ITEM_MAP[it.id] = Object.assign({ banner: banner }, it); }));
 
+/* ---------- ของสวมใส่ภาคสนาม (echo-equivalent) — เฟส 4 ---------- */
+const GEAR_SLOTS = ['slot1', 'slot2', 'slot3', 'slot4'];
+const GEAR_SLOT_LABELS = { slot1: 'หมวกนิรภัย', slot2: 'ถุงมือช่าง', slot3: 'รองเท้าเซฟตี้', slot4: 'อุปกรณ์เสริม' };
+const GEAR_SLOT_ICONS = { slot1: '⛑️', slot2: '🧤', slot3: '🥾', slot4: '🎒' };
+/* น้ำหนักสุ่ม stat หลักตามช่อง (ช่องไหนมักได้ stat อะไรเป็นหลัก) */
+const GEAR_SLOT_MAIN_WEIGHTS = {
+  slot1: { incomeBoost: 70, upgradeDiscount: 15, hazardResist: 15 },
+  slot2: { incomeBoost: 15, upgradeDiscount: 70, hazardResist: 15 },
+  slot3: { incomeBoost: 15, upgradeDiscount: 15, hazardResist: 70 },
+  slot4: { incomeBoost: 34, upgradeDiscount: 33, hazardResist: 33 }
+};
+const GEAR_STAT_LABELS = { incomeBoost: 'ผลผลิตโรงไฟฟ้า', upgradeDiscount: 'ลดค่าอัพเกรด', hazardResist: 'ต้านเหตุฉุกเฉิน' };
+const GEAR_SETS = {
+  efficiency: { name: 'ชุดประสิทธิภาพ', icon: '📈', 2: { incomeBoost: 0.08 }, 4: { incomeBoost: 0.15 } },
+  safety: { name: 'ชุดปลอดภัย', icon: '🛡️', 2: { hazardResist: 0.15 }, 4: { hazardResist: 0.30 } },
+  thrift: { name: 'ชุดประหยัด', icon: '💰', 2: { upgradeDiscount: 0.08 }, 4: { upgradeDiscount: 0.15 } }
+};
+/* ค่าโบนัสต่อระดับความหายาก [min, max] ของ mainStat และ substat แต่ละบรรทัด */
+const GEAR_RARITY_RANGES = {
+  common: { main: [0.03, 0.05], sub: [0.010, 0.020] },
+  rare: { main: [0.05, 0.08], sub: [0.020, 0.030] },
+  epic: { main: [0.08, 0.12], sub: [0.030, 0.045] },
+  legendary: { main: [0.12, 0.18], sub: [0.045, 0.060] }
+};
+
+function gachaWeightedPick(weights) {
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const key in weights) { if (r < weights[key]) return key; r -= weights[key]; }
+  return Object.keys(weights)[0];
+}
+function gachaRandRange(range) { return range[0] + Math.random() * (range[1] - range[0]); }
+function gachaRollGearRarity(finalScore) {
+  const bonus = Math.min(40, Math.floor(finalScore / 50));
+  const weights = { common: Math.max(10, 60 - bonus), rare: 25, epic: 10 + Math.floor(bonus * 0.4), legendary: 5 + Math.floor(bonus * 0.6) };
+  return gachaWeightedPick(weights);
+}
+function gachaGenerateGearPiece(rarity) {
+  const slot = GEAR_SLOTS[Math.floor(Math.random() * GEAR_SLOTS.length)];
+  const mainStat = gachaWeightedPick(GEAR_SLOT_MAIN_WEIGHTS[slot]);
+  const range = GEAR_RARITY_RANGES[rarity];
+  const statKeys = Object.keys(GEAR_STAT_LABELS);
+  const substats = [];
+  for (let i = 0; i < 4; i++) {
+    const stat = statKeys[Math.floor(Math.random() * statKeys.length)];
+    substats.push({ stat: stat, value: Math.round(gachaRandRange(range.sub) * 1000) / 1000 });
+  }
+  const setKeys = Object.keys(GEAR_SETS);
+  return {
+    id: 'gear_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+    slot: slot,
+    rarity: rarity,
+    set: setKeys[Math.floor(Math.random() * setKeys.length)],
+    mainStat: mainStat,
+    mainValue: Math.round(gachaRandRange(range.main) * 1000) / 1000,
+    substats: substats
+  };
+}
+function gachaAwardGearDrop(finalScore) {
+  const dropChance = Math.min(0.85, 0.35 + finalScore / 2000);
+  if (Math.random() > dropChance) return null;
+  const rarity = gachaRollGearRarity(finalScore);
+  const piece = gachaGenerateGearPiece(rarity);
+  gacha.gearInventory = gacha.gearInventory || [];
+  gacha.gearInventory.push(piece);
+  saveGachaState();
+  showToast('🎁 ได้ของสวมใส่ภาคสนาม: ' + GEAR_SLOT_LABELS[piece.slot] + ' (' + GACHA_RARITY_LABELS[piece.rarity] + ')');
+  return piece;
+}
+function gachaEquipGear(gearId) {
+  const piece = (gacha.gearInventory || []).find(g => g.id === gearId);
+  if (!piece) return;
+  gacha.equippedGear = gacha.equippedGear || {};
+  gacha.equippedGear[piece.slot] = (gacha.equippedGear[piece.slot] === gearId) ? null : gearId;
+  saveGachaState();
+  if (typeof renderGearScreen === 'function') renderGearScreen();
+  showToast(gacha.equippedGear[piece.slot] ? '✅ สวมใส่แล้ว!' : 'ถอดออกแล้ว');
+}
+function gachaDeleteGear(gearId) {
+  gacha.gearInventory = (gacha.gearInventory || []).filter(g => g.id !== gearId);
+  if (gacha.equippedGear) { Object.keys(gacha.equippedGear).forEach(slot => { if (gacha.equippedGear[slot] === gearId) gacha.equippedGear[slot] = null; }); }
+  saveGachaState();
+  if (typeof renderGearScreen === 'function') renderGearScreen();
+  showToast('🗑️ ทิ้งของชิ้นนี้แล้ว');
+}
+/* รวมโบนัสทั้งหมดจากของที่สวมใส่อยู่ (main stat + substat + ชุด 2/4 ชิ้น) */
+function gachaGearBonusTotals() {
+  const totals = { incomeBoost: 0, upgradeDiscount: 0, hazardResist: 0 };
+  const equippedIds = Object.values(gacha.equippedGear || {}).filter(Boolean);
+  const pieces = equippedIds.map(id => (gacha.gearInventory || []).find(g => g.id === id)).filter(Boolean);
+  pieces.forEach(g => {
+    totals[g.mainStat] = (totals[g.mainStat] || 0) + g.mainValue;
+    g.substats.forEach(s => { totals[s.stat] = (totals[s.stat] || 0) + s.value; });
+  });
+  const setCounts = {};
+  pieces.forEach(g => { setCounts[g.set] = (setCounts[g.set] || 0) + 1; });
+  Object.keys(setCounts).forEach(setKey => {
+    const def = GEAR_SETS[setKey]; if (!def) return;
+    const n = setCounts[setKey];
+    if (n >= 2) Object.keys(def[2]).forEach(stat => totals[stat] = (totals[stat] || 0) + def[2][stat]);
+    if (n >= 4) Object.keys(def[4]).forEach(stat => totals[stat] = (totals[stat] || 0) + def[4][stat]);
+  });
+  return totals;
+}
+
 /* ---------- state: เก็บบน Supabase (player_state) ไม่แตะ localStorage ---------- */
 function gachaDefaultState() {
   return {
@@ -64,7 +169,9 @@ function gachaDefaultState() {
     shards: { style: 0, blueprint: 0, engineer: 0 },
     owned: { style: [], blueprint: [], engineer: [] },
     equippedSkins: {},
-    equippedEngineer: null
+    equippedEngineer: null,
+    gearInventory: [],
+    equippedGear: { slot1: null, slot2: null, slot3: null, slot4: null }
   };
 }
 function gachaMergeWithDefault(saved) {
@@ -76,7 +183,9 @@ function gachaMergeWithDefault(saved) {
     shards: Object.assign({}, def.shards, saved.shards || {}),
     owned: Object.assign({}, def.owned, saved.owned || {}),
     equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
-    equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer
+    equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer,
+    gearInventory: Array.isArray(saved.gearInventory) ? saved.gearInventory : def.gearInventory,
+    equippedGear: Object.assign({}, def.equippedGear, saved.equippedGear || {})
   };
 }
 let gacha = gachaDefaultState();
@@ -210,19 +319,24 @@ function gachaEquippedEngineerItem() {
 }
 function getGachaUpgradeDiscount() {
   const e = gachaEquippedEngineerItem();
-  if (!e) return 0;
-  if (e.perk === 'upgradeDiscount' || e.perk === 'allRounder') return e.value;
-  return 0;
+  let v = 0;
+  if (e && (e.perk === 'upgradeDiscount' || e.perk === 'allRounder')) v += e.value;
+  v += gachaGearBonusTotals().upgradeDiscount;
+  return Math.min(0.9, v);
 }
 function getGachaHazardMult() {
   const e = gachaEquippedEngineerItem();
-  if (e && e.perk === 'hazardReduce') return 1 - e.value;
-  return 1;
+  let reduce = 0;
+  if (e && e.perk === 'hazardReduce') reduce += e.value;
+  reduce += gachaGearBonusTotals().hazardResist;
+  return 1 - Math.min(0.9, reduce);
 }
 function getGachaIncomeMult() {
   const e = gachaEquippedEngineerItem();
-  if (e && (e.perk === 'incomeBoost' || e.perk === 'allRounder')) return 1 + e.value;
-  return 1;
+  let boost = 0;
+  if (e && (e.perk === 'incomeBoost' || e.perk === 'allRounder')) boost += e.value;
+  boost += gachaGearBonusTotals().incomeBoost;
+  return 1 + boost;
 }
 function getSkinIcon(def) {
   const skinId = gacha.equippedSkins[def.key];
