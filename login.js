@@ -96,7 +96,12 @@ async function submitSignUp() {
     if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
     showLobbyScreen();
   } catch (e) {
-    showToast('สมัครไม่สำเร็จ: ' + (e.message || 'ลองใหม่อีกครั้ง'));
+    const msg = e && e.message ? e.message : '';
+    if (/already registered/i.test(msg)) {
+      showToast('อีเมลนี้เคยสมัครไว้แล้ว (อาจค้างรอยืนยันจากก่อนหน้า) — ลองพิมพ์อีเมลนี้ในช่องชื่อผู้ใช้แล้วกด "เข้าสู่ระบบ" แทน ถ้ายังเข้าไม่ได้ให้ไปลบบัญชีนี้ใน Supabase Dashboard → Authentication → Users แล้วสมัครใหม่');
+    } else {
+      showToast('สมัครไม่สำเร็จ: ' + (msg || 'ลองใหม่อีกครั้ง'));
+    }
   } finally { setLoginBusy(false, ''); }
 }
 
@@ -129,7 +134,12 @@ async function submitSignIn() {
     if (typeof gachaLoadFromCloud === 'function') await gachaLoadFromCloud(data.user.id);
     showLobbyScreen();
   } catch (e) {
-    showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || 'ตรวจชื่อผู้ใช้/รหัสผ่านอีกครั้ง'));
+    const msg = e && e.message ? e.message : '';
+    if (/not confirmed/i.test(msg)) {
+      showToast('บัญชีนี้ยังไม่ได้ยืนยันอีเมล — เช็คอีเมล (รวมโฟลเดอร์ spam) แล้วกดลิงก์ยืนยันก่อน หรือปิด "Confirm email" ใน Supabase แล้วลบบัญชีนี้สมัครใหม่');
+    } else {
+      showToast('เข้าสู่ระบบไม่สำเร็จ: ' + (msg || 'ตรวจชื่อผู้ใช้/รหัสผ่านอีกครั้ง'));
+    }
   } finally { setLoginBusy(false, ''); }
 }
 
