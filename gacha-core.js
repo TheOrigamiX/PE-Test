@@ -94,17 +94,36 @@ async function gachaLoadFromCloud(userId) {
       const { error: insErr } = await sb.from('player_state').insert({ user_id: userId, gacha: gacha });
       if (insErr) throw insErr;
     }
-  } catch (e) { console.error('โหลดข้อมูลผู้เล่นจาก Supabase ล้มเหลว:', e); gacha = gachaDefaultState(); }
+  } catch (e) {
+    console.error('โหลดข้อมูลผู้เล่นจาก Supabase ล้มเหลว:', e);
+    if (typeof showToast === 'function') showToast('⚠️ โหลดข้อมูลผู้เล่นไม่สำเร็จ (เช็คว่ารันตาราง player_state แล้วหรือยัง) — เริ่มด้วยค่าเริ่มต้นชั่วคราว');
+    gacha = gachaDefaultState();
+  }
 }
+
+/* เก็บ promise ของการเซฟล่าสุดไว้ เพื่อให้ logout รอเซฟให้เสร็จก่อนตัด session
+   (แก้ปัญหาสุ่ม/แก้ของแล้วรีบกดออกจากระบบทันที ทำให้เซฟไม่ทันจบ) */
+let gachaPendingSave = null;
 async function saveGachaState() {
   if (!(typeof sb === 'object' && sb && sb.auth) || !(typeof voltrushCurrentUser === 'object' && voltrushCurrentUser)) {
     console.warn('ยังไม่ได้ login — ข้อมูลผู้เล่นจะไม่ถูกบันทึก');
+    if (typeof showToast === 'function') showToast('⚠️ ยังไม่ได้ login กับ Supabase ข้อมูลนี้จะไม่ถูกบันทึก');
     return;
   }
-  try {
-    const { error } = await sb.from('player_state').upsert({ user_id: voltrushCurrentUser.id, gacha: gacha, updated_at: new Date().toISOString() });
-    if (error) throw error;
-  } catch (e) { console.error('บันทึกข้อมูลผู้เล่นขึ้น Supabase ล้มเหลว:', e); }
+  const payload = { user_id: voltrushCurrentUser.id, gacha: gacha, updated_at: new Date().toISOString() };
+  gachaPendingSave = (async () => {
+    try {
+      const { error } = await sb.from('player_state').upsert(payload);
+      if (error) throw error;
+    } catch (e) {
+      console.error('บันทึกข้อมูลผู้เล่นขึ้น Supabase ล้มเหลว:', e);
+      if (typeof showToast === 'function') showToast('⚠️ บันทึกข้อมูลผู้เล่นไม่สำเร็จ (เช็คว่ารันตาราง player_state + RLS แล้วหรือยัง)');
+    }
+  })();
+  return gachaPendingSave;
+}
+async function gachaFlushPendingSave() {
+  if (gachaPendingSave) { try { await gachaPendingSave; } catch (e) {} }
 }
 
 /* ---------- roll logic ---------- */
