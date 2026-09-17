@@ -8,6 +8,47 @@
   background: rgba(255,209,102,0.1); border: 1px solid rgba(255,209,102,0.3);
   border-radius: 12px; padding: 8px; margin-bottom: 14px;
 }
+.gacha-tab-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+.gacha-tab-btn {
+  padding: 8px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05); color: #9fb3d1; font-size: 0.8rem; font-weight: 800; cursor: pointer;
+}
+.gacha-tab-btn.selected { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; border-color: transparent; }
+
+/* ---- ตู้กาชา: เลย์เอาต์เต็มจอแบบ Convene ---- */
+.gacha-banner-screen { position: fixed; inset: 0; padding: 0; background: radial-gradient(circle at 70% 25%, #1e2a52 0%, #0b1226 70%); }
+.gacha-currency-bar { position: absolute; top: 14px; right: 14px; z-index: 5; display: flex; gap: 8px; }
+.gacha-currency-chip { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 6px 14px; font-size: 0.82rem; color: #ffd166; }
+
+.gacha-banner-layout { position: absolute; inset: 0; display: flex; padding: 70px 20px 110px; gap: 16px; }
+.gacha-banner-list { display: flex; flex-direction: column; gap: 10px; width: 150px; overflow-y: auto; }
+.gacha-banner-card {
+  text-align: left; padding: 10px; border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: 2px solid transparent; color: #e6ecf7;
+}
+.gacha-banner-card.active { border-color: var(--rarity-color, #ffd166); background: rgba(255,255,255,0.1); }
+.gacha-banner-card-icon { font-size: 1.4rem; }
+.gacha-banner-card-label { font-size: 0.78rem; font-weight: 800; margin-top: 2px; }
+.gacha-banner-card-up { font-size: 0.6rem; color: #ffd166; font-weight: 800; margin-top: 3px; }
+
+.gacha-hero-zone { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; }
+.gacha-rules-float { position: absolute; top: 0; left: 0; background: linear-gradient(120deg, rgba(11,18,38,0.85), transparent); padding: 14px 18px; border-radius: 16px; max-width: 70%; }
+.gacha-rules-up { font-size: 0.85rem; color: #ffd166; font-weight: 800; margin-bottom: 6px; }
+.gacha-rules-line { font-size: 0.74rem; color: #9fb3d1; margin-top: 2px; }
+.gacha-hero-glow-big { width: min(50vw, 300px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rarity-color, #ffd166) 30%, transparent) 0%, transparent 70%); display: flex; align-items: center; justify-content: center; }
+.gacha-hero-icon-big { font-size: min(16vw, 9rem); filter: drop-shadow(0 0 30px var(--rarity-color, #ffd166)); }
+
+.gacha-bottom-bar { position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.gacha-redeem-chip { background: rgba(110,231,168,0.15); color: #6ee7a8; border: 1px solid rgba(110,231,168,0.3); border-radius: 14px; padding: 10px 16px; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+.gacha-pull-btns { display: flex; gap: 10px; }
+.gacha-pull-cost { font-size: 0.68rem; opacity: 0.85; }
+
+@media (max-width: 700px) {
+  .gacha-banner-layout { flex-direction: column; padding: 70px 14px 130px; }
+  .gacha-banner-list { flex-direction: row; width: auto; overflow-x: auto; }
+  .gacha-rules-float { max-width: 100%; position: static; margin-bottom: 10px; }
+  .gacha-hero-zone { flex-direction: column; }
+}
 .gacha-pity-row { text-align: center; font-size: 0.8rem; color: #9fb3d1; margin: 8px 0; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .gacha-redeem-btn {
   border: 1px solid rgba(110,231,168,0.4); background: rgba(110,231,168,0.12); color: #6ee7a8;
@@ -28,6 +69,8 @@
 .gacha-item-name { font-size: 0.7rem; font-weight: 700; color: #e6ecf7; min-height: 28px; }
 .gacha-item-sub { font-size: 0.65rem; color: #9fb3d1; margin: 3px 0; min-height: 26px; }
 .gacha-item-rarity { font-size: 0.62rem; font-weight: 800; color: var(--rarity-color, #9fb3d1); text-transform: uppercase; letter-spacing: 0.5px; }
+.gacha-item-level { font-size: 0.62rem; font-weight: 800; color: #ffd166; margin-top: 4px; }
+.gacha-item-skill { font-size: 0.6rem; color: #9fb3d1; margin: 3px 0 6px; }
 .gacha-equip-btn {
   margin-top: 6px; width: 100%; padding: 5px; border-radius: 8px; border: none;
   background: rgba(110,231,168,0.2); color: #6ee7a8; font-size: 0.64rem; font-weight: 800; cursor: pointer;

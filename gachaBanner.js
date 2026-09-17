@@ -1,15 +1,14 @@
 /* ============================================================
-   VoltRush — ตู้กาชา (หน้าสุ่มรวม แยกจากหน้าคอลเลกชัน/ตัวละคร)
-   เลือก banner ก่อน แล้วค่อยสุ่ม — สกิน/พิมพ์เขียว/วิศวกร/อาวุธ ใช้
-   หน้านี้ร่วมกันหมด ปุ่มดูของ/จัดการอยู่คนละหน้า (skin.js/blueprint.js/
-   engineer.js/weapon.js ที่เหลือแค่กริดคอลเลกชัน ไม่มีปุ่มสุ่มแล้ว)
+   VoltRush — ตู้กาชา (เลย์เอาต์ใหม่ อิงหน้า Convene ของ Wuthering Waves):
+   แถบเงินบนสุด, banner list การ์ดรูปภาพซ้าย, อาร์ตตัวเวทเต็มจอ,
+   ปุ่มสุ่ม x1/x10 ล่างสุด
 ============================================================ */
 
 const GACHA_BANNER_TABS = [
-  { key: 'engineer', label: '👷 วิศวกร' },
-  { key: 'weapon', label: '🔧 อาวุธ' },
-  { key: 'style', label: '🎨 สกิน' },
-  { key: 'blueprint', label: '⚡ พิมพ์เขียว' }
+  { key: 'engineer', label: 'วิศวกร', icon: '👷' },
+  { key: 'weapon', label: 'อาวุธ', icon: '🔧' },
+  { key: 'style', label: 'สกิน', icon: '🎨' },
+  { key: 'blueprint', label: 'พิมพ์เขียว', icon: '⚡' }
 ];
 let currentGachaBanner = 'engineer';
 
@@ -17,21 +16,17 @@ function buildGachaBannerScreenUI() {
   if (document.getElementById('gachaBannerScreen')) return;
   const screen = document.createElement('div');
   screen.id = 'gachaBannerScreen';
-  screen.className = 'screen hidden';
+  screen.className = 'screen hidden gacha-banner-screen';
   screen.innerHTML =
-    '<div class="start-card gacha-page-card">' +
-    '<div class="gacha-page-topbar">' +
-      '<button class="secondary-btn" onclick="closeGachaBannerScreen()">⬅ กลับล็อบบี้</button>' +
-      '<h1 style="margin:0;font-size:1.2rem;">🎰 ตู้กาชา</h1>' +
-      '<span style="width:1px;"></span>' +
+    '<button class="char-back-btn" onclick="closeGachaBannerScreen()">⬅</button>' +
+    '<div class="gacha-currency-bar" id="gachaCurrencyBar"></div>' +
+    '<div class="gacha-banner-layout">' +
+      '<div class="gacha-banner-list" id="gachaBannerList"></div>' +
+      '<div class="gacha-hero-zone" id="gachaHeroZone"></div>' +
     '</div>' +
-    '<div class="gacha-tab-row" id="gachaTabRow">' +
-      GACHA_BANNER_TABS.map(t => '<button class="gacha-tab-btn" data-banner="' + t.key + '" onclick="switchGachaBannerTab(\'' + t.key + '\')">' + t.label + '</button>').join('') +
-    '</div>' +
-    '<div class="gacha-crystal-bar" id="gachaBannerCrystalBar"></div>' +
-    '<div class="gacha-pity-row" id="gachaBannerPityRow"></div>' +
-    '<p class="gacha-hint" id="gachaBannerFeaturedHint"></p>' +
-    '<div class="start-actions" style="margin:12px 0;" id="gachaBannerPullBtns"></div>' +
+    '<div class="gacha-bottom-bar">' +
+      '<button class="gacha-redeem-chip" id="gachaRedeemChip" onclick="gachaRedeemShards(currentGachaBanner); renderGachaBannerScreen();"></button>' +
+      '<div class="gacha-pull-btns" id="gachaBannerPullBtns"></div>' +
     '</div>';
   document.body.appendChild(screen);
 }
@@ -42,30 +37,44 @@ function switchGachaBannerTab(banner) {
 }
 
 function renderGachaBannerScreen() {
-  document.querySelectorAll('#gachaTabRow .gacha-tab-btn').forEach(b => b.classList.toggle('selected', b.dataset.banner === currentGachaBanner));
+  document.getElementById('gachaCurrencyBar').innerHTML =
+    '<div class="gacha-currency-chip">💎 <b>' + gacha.crystals + '</b></div>' +
+    '<div class="gacha-currency-chip">🔩 <b>' + gacha.parts + '</b></div>';
 
-  document.getElementById('gachaBannerCrystalBar').textContent = '💎 ' + gacha.crystals + ' Volt Crystal' + (gachaIsStarBanner(currentGachaBanner) ? ' • 🔩 ' + gacha.parts + ' ชิ้นส่วน' : '');
+  document.getElementById('gachaBannerList').innerHTML = GACHA_BANNER_TABS.map(t => {
+    const isStar = gachaIsStarBanner(t.key);
+    const featured = isStar ? GACHA_ITEM_MAP[GACHA_FEATURED[t.key]] : null;
+    const color = featured ? ALL_RARITY_COLORS[featured.rarity] : '#9fb3d1';
+    return '<button class="gacha-banner-card ' + (t.key === currentGachaBanner ? 'active' : '') + '" style="--rarity-color:' + color + '" onclick="switchGachaBannerTab(\'' + t.key + '\')">' +
+      '<div class="gacha-banner-card-icon">' + t.icon + '</div>' +
+      '<div class="gacha-banner-card-label">' + t.label + '</div>' +
+      (featured ? '<div class="gacha-banner-card-up">UP! ' + featured.name + '</div>' : '') +
+      '</button>';
+  }).join('');
 
   const isStar = gachaIsStarBanner(currentGachaBanner);
   const hardPity = isStar ? STAR_PITY_HARD : GACHA_PITY_HARD;
   const pityNow = gacha.pity[currentGachaBanner];
   const left = hardPity - pityNow;
   const pityLabel = isStar ? 'การันตี 5★' : 'การันตีตำนาน';
-  document.getElementById('gachaBannerPityRow').innerHTML =
-    pityLabel + 'ในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + hardPity + ') • เศษสะสม: ' + gacha.shards[currentGachaBanner] +
-    '<button class="gacha-redeem-btn" onclick="gachaRedeemShards(currentGachaBanner); renderGachaBannerScreen();">แลกเศษ → 💎</button>';
+  const featured = isStar ? GACHA_ITEM_MAP[GACHA_FEATURED[currentGachaBanner]] : null;
+  const heroColor = featured ? ALL_RARITY_COLORS[featured.rarity] : '#ffd166';
+  const heroIcon = currentGachaBanner === 'engineer' ? '👷' : currentGachaBanner === 'weapon' ? '🔧' : currentGachaBanner === 'style' ? '🎨' : '⚡';
 
-  const hintEl = document.getElementById('gachaBannerFeaturedHint');
-  if (isStar) {
-    const featured = GACHA_ITEM_MAP[GACHA_FEATURED[currentGachaBanner]];
-    hintEl.innerHTML = 'ตัวที่ขึ้นเวท (5★): <b>' + (featured ? featured.name : '-') + '</b> — สุ่มได้ 5★ ครั้งไหนได้ตัวนี้แน่นอน';
-  } else {
-    hintEl.innerHTML = currentGachaBanner === 'blueprint' ? 'พิมพ์เขียวที่ปลดล็อกแล้วใช้อัตโนมัติ ไม่ต้องสวมใส่เอง' : '';
-  }
+  document.getElementById('gachaHeroZone').innerHTML =
+    '<div class="gacha-rules-float">' +
+      (featured ? '<div class="gacha-rules-up">✨ ตัวขึ้นเวท: <b>' + featured.name + '</b></div>' : '') +
+      '<div class="gacha-rules-line">' + pityLabel + 'ในอีก ' + left + ' ครั้ง (' + pityNow + '/' + hardPity + ')</div>' +
+      '<div class="gacha-rules-line">เศษสะสม: ' + gacha.shards[currentGachaBanner] + ' ชิ้น</div>' +
+      (currentGachaBanner === 'blueprint' ? '<div class="gacha-rules-line">พิมพ์เขียวที่ปลดล็อกใช้อัตโนมัติ</div>' : '') +
+    '</div>' +
+    '<div class="gacha-hero-glow-big" style="--rarity-color:' + heroColor + '"><div class="gacha-hero-icon-big">' + heroIcon + '</div></div>';
+
+  document.getElementById('gachaRedeemChip').textContent = 'แลกเศษ → 💎';
 
   document.getElementById('gachaBannerPullBtns').innerHTML =
-    '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullOne(currentGachaBanner)">สุ่ม 1 ครั้ง (💎' + GACHA_PULL_COST + ')</button>' +
-    '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullTen(currentGachaBanner)">สุ่ม 10 ครั้ง (💎' + GACHA_PULL10_COST + ')</button>';
+    '<button class="char-action-btn" onclick="gachaPullOne(currentGachaBanner)">สุ่ม x1<br><span class="gacha-pull-cost">💎' + GACHA_PULL_COST + '</span></button>' +
+    '<button class="char-action-btn primary" onclick="gachaPullTen(currentGachaBanner)">สุ่ม x10<br><span class="gacha-pull-cost">💎' + GACHA_PULL10_COST + '</span></button>';
 }
 
 function showGachaBannerScreen() {
