@@ -3,7 +3,19 @@
 ============================================================ */
 .char-detail-screen {
   position: fixed; inset: 0; padding: 0; display: block;
-  background: radial-gradient(circle at 75% 30%, #1e2a52 0%, #0b1226 70%);
+  background:
+    radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(2px 2px at 70% 65%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 45% 80%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1.5px 1.5px at 85% 15%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 10% 85%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(circle at 75% 30%, #1e2a52 0%, #0b1226 70%);
+  background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 200% 200%, 160% 160%;
+  animation: charBgDrift 24s ease-in-out infinite alternate;
+}
+@keyframes charBgDrift {
+  0% { background-position: 15% 20%, 65% 60%, 40% 75%, 80% 10%, 5% 80%, 20% 20%; }
+  100% { background-position: 30% 35%, 75% 50%, 55% 65%, 65% 25%, 20% 65%, 80% 60%; }
 }
 .char-back-btn {
   position: absolute; top: 14px; left: 14px; z-index: 5;
@@ -40,6 +52,7 @@
   background: linear-gradient(120deg, rgba(11,18,38,0.9), rgba(11,18,38,0.15));
   padding: 20px; border-radius: 20px;
 }
+.char-info-card-wide { max-width: 640px; max-height: 78vh; overflow-y: auto; align-self: stretch; }
 .char-info-name { font-size: 1.3rem; font-weight: 900; color: #e6ecf7; }
 .char-info-meta { font-size: 0.78rem; color: #9fb3d1; margin: 4px 0 16px; font-weight: 700; }
 .char-card-section { margin-bottom: 14px; }
@@ -47,6 +60,23 @@
 .char-card-text { font-size: 0.82rem; color: #e6ecf7; line-height: 1.5; }
 .char-card-sub { font-size: 0.72rem; color: #9fb3d1; margin-top: 4px; }
 .char-card-big { font-size: 1.6rem; font-weight: 900; color: #e6ecf7; }
+.char-empty-text { color: #6d8099; text-align: center; padding: 20px 0; }
+
+.char-slot-picker { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.char-slot-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px; border-radius: 12px; border: none; cursor: pointer; background: rgba(255,255,255,0.06); color: #9fb3d1; font-size: 1rem; }
+.char-slot-chip span { font-size: 0.6rem; font-weight: 700; }
+.char-slot-chip.active { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; }
+
+.char-pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.char-pick-card { background: rgba(255,255,255,0.04); border: 2px solid var(--rarity-color, #555); border-radius: 14px; padding: 12px; box-shadow: 0 0 10px color-mix(in srgb, var(--rarity-color, #555) 30%, transparent); }
+.char-pick-head { display: flex; justify-content: space-between; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; color: #9fb3d1; margin-bottom: 4px; }
+.char-pick-name { font-size: 0.86rem; font-weight: 800; color: #e6ecf7; margin-bottom: 4px; }
+.char-pick-sub { font-size: 0.7rem; color: #9fb3d1; margin-bottom: 4px; }
+.char-pick-actions { display: flex; gap: 6px; margin-top: 8px; }
+.char-pick-btn { flex: 1; padding: 7px; border-radius: 8px; border: none; cursor: pointer; background: rgba(110,231,168,0.15); color: #6ee7a8; font-size: 0.68rem; font-weight: 800; }
+.char-pick-btn.equipped { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; }
+.char-pick-btn.danger { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.char-pick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .char-hero-art { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
 .char-hero-glow {
@@ -67,14 +97,7 @@
 }
 .char-action-btn.primary { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; }
 .char-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.char-action-select {
-  padding: 12px 18px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(20,28,50,0.95); color: #e6ecf7; font-size: 0.82rem; max-width: 260px;
-}
 .char-action-hint { font-size: 0.76rem; color: #6d8099; }
-.char-gear-slot-picker { display: flex; gap: 6px; margin-right: 10px; }
-.char-slot-chip { width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer; background: rgba(255,255,255,0.08); font-size: 1rem; }
-.char-slot-chip.active { background: linear-gradient(135deg, #ffd166, #ff7b54); }
 
 @media (max-width: 700px) {
   .char-detail-layout { flex-direction: column-reverse; padding: 70px 14px 130px; }

@@ -34,13 +34,9 @@ function refreshLobbyStats() {
   const skinCountEl = document.getElementById('lobbySkinCount');
   const bpCountEl = document.getElementById('lobbyBlueprintCount');
   const engCountEl = document.getElementById('lobbyEngineerCount');
-  const wpnCountEl = document.getElementById('lobbyWeaponCount');
-  const gearCountEl = document.getElementById('lobbyGearCount');
   if (skinCountEl) skinCountEl.textContent = lobbyBannerCountLabel('style');
   if (bpCountEl) bpCountEl.textContent = lobbyBannerCountLabel('blueprint');
   if (engCountEl) engCountEl.textContent = lobbyBannerCountLabel('engineer');
-  if (wpnCountEl) wpnCountEl.textContent = lobbyBannerCountLabel('weapon');
-  if (gearCountEl) gearCountEl.textContent = ((gacha.gearInventory || []).length) + ' ชิ้น';
 }
 
 function buildLobbyScreenUI() {
@@ -82,17 +78,9 @@ function buildLobbyScreenUI() {
           '<div class="lobby-nav-icon">⚡</div><div class="lobby-nav-title">พิมพ์เขียว</div>' +
           '<div class="lobby-nav-sub" id="lobbyBlueprintCount">0/0 ชิ้น</div>' +
         '</button>' +
-        '<button class="lobby-nav-card" onclick="showEngineerScreen()">' +
+        '<button class="lobby-nav-card" onclick="openEngineerProfile()">' +
           '<div class="lobby-nav-icon">👷</div><div class="lobby-nav-title">วิศวกร</div>' +
           '<div class="lobby-nav-sub" id="lobbyEngineerCount">0/0 ชิ้น</div>' +
-        '</button>' +
-        '<button class="lobby-nav-card" onclick="showWeaponScreen()">' +
-          '<div class="lobby-nav-icon">🔧</div><div class="lobby-nav-title">อาวุธ</div>' +
-          '<div class="lobby-nav-sub" id="lobbyWeaponCount">0/0 ชิ้น</div>' +
-        '</button>' +
-        '<button class="lobby-nav-card" onclick="showGearScreen()">' +
-          '<div class="lobby-nav-icon">🎒</div><div class="lobby-nav-title">ของสวมใส่</div>' +
-          '<div class="lobby-nav-sub" id="lobbyGearCount">0 ชิ้น</div>' +
         '</button>' +
         '<button class="lobby-nav-card" onclick="openLeaderboardFromLobby()">' +
           '<div class="lobby-nav-icon">🏆</div><div class="lobby-nav-title">อันดับคะแนน</div>' +

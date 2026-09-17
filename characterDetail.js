@@ -1,7 +1,7 @@
 /* ============================================================
-   VoltRush — Character detail / profile screen (เลย์เอาต์ใหม่ อิงหน้า
-   ตัวละคร/อาวุธของ Wuthering Waves): ไอคอนแท็บซ้าย, อาร์ตใหญ่ขวา,
-   การ์ดข้อมูลลอยไล่เฉด, แถบสลับตัวละครมุมบน, ปุ่ม action แค่ 1-2 ปุ่มล่าง
+   VoltRush — Character detail / profile screen
+   อาวุธ/ของสวมใส่ จัดการที่นี่ทั้งหมดแล้ว (ไม่มีหน้าแยกอีกต่อไป)
+   เลือกของแบบการ์ดเห็นรายละเอียดเต็ม ไม่ใช่ dropdown
 ============================================================ */
 
 const CHAR_DETAIL_TABS = [
@@ -12,6 +12,7 @@ const CHAR_DETAIL_TABS = [
 ];
 let charDetailCurrentId = null;
 let charDetailTab = 'skill';
+let charDetailGearActiveSlot = null;
 
 function buildCharacterDetailUI() {
   if (document.getElementById('characterDetailScreen')) return;
@@ -30,15 +31,15 @@ function buildCharacterDetailUI() {
   document.body.appendChild(screen);
 }
 
-function charDetailSwitchTo(id) {
-  charDetailCurrentId = id;
-  charDetailTab = 'skill';
-  renderCharacterDetail();
+function openEngineerProfile() {
+  const ownedIds = gacha.owned.engineer || [];
+  if (ownedIds.length === 0) { showToast('ยังไม่มีวิศวกรเลย ลองสุ่มที่ 🎰 ตู้กาชาก่อน'); return; }
+  const id = gacha.equippedEngineer && ownedIds.indexOf(gacha.equippedEngineer) !== -1 ? gacha.equippedEngineer : ownedIds[0];
+  showCharacterDetail(id);
 }
-function charDetailSwitchTab(tab) {
-  charDetailTab = tab;
-  renderCharacterDetail();
-}
+
+function charDetailSwitchTo(id) { charDetailCurrentId = id; charDetailTab = 'skill'; renderCharacterDetail(); }
+function charDetailSwitchTab(tab) { charDetailTab = tab; renderCharacterDetail(); }
 
 function renderCharSwitchRow() {
   const owned = GACHA_ITEMS.engineer.filter(e => gacha.owned.engineer.indexOf(e.id) !== -1);
@@ -56,7 +57,8 @@ function charDetailHeroArt(it, color) {
     '</div>';
 }
 
-function charDetailTabContent(it, level) {
+/* ---------- แท็บ: สกิล / เลเวล (ข้อความในการ์ดกลาง เหมือนเดิม) ---------- */
+function charDetailInfoContent(it, level) {
   if (charDetailTab === 'skill') {
     return '<div class="char-card-section"><div class="char-card-label">พาสซีฟ — ' + it.skillName + '</div><div class="char-card-text">' + it.desc + '</div></div>' +
       '<div class="char-card-section"><div class="char-card-label">⚡ สกิลกดใช้ — ' + it.activeSkill.name + '</div><div class="char-card-text">' + it.activeSkill.desc + '</div><div class="char-card-sub">คูลดาวน์ ' + it.activeSkill.cooldownSec + ' วิ • ระยะเวลา ' + it.activeSkill.durationSec + ' วิ</div></div>';
@@ -68,21 +70,59 @@ function charDetailTabContent(it, level) {
       '<div class="char-card-sub">' + (maxed ? 'ถึงเลเวลสูงสุดแล้ว' : 'ใช้ 🔩 ' + cost + ' ชิ้นส่วน เพื่ออัพเป็น Lv.' + (level + 1)) + '</div>' +
       '<div class="char-card-sub">มี 🔩 ชิ้นส่วนอยู่ ' + gacha.parts + ' ชิ้น</div></div>';
   }
-  if (charDetailTab === 'weapon') {
-    const weapon = gachaEquippedWeaponItem();
-    return '<div class="char-card-section"><div class="char-card-label">อาวุธที่ติดตั้ง</div>' +
-      '<div class="char-card-text">' + (weapon ? ('<b>' + weapon.name + '</b> — ' + weapon.skillName + '<br>' + weapon.desc) : 'ยังไม่ได้ติดตั้งอาวุธ') + '</div>' +
-      '<div class="char-card-sub">สล็อตกลาง ใช้ร่วมกันทุกวิศวกร</div></div>';
-  }
-  /* gear */
-  const equipped = gacha.equippedGear || {};
-  return '<div class="char-card-section"><div class="char-card-label">ของสวมใส่ (สล็อตกลาง)</div>' +
-    GEAR_SLOTS.map(slot => {
-      const gid = equipped[slot];
-      const piece = gid ? (gacha.gearInventory || []).find(g => g.id === gid) : null;
-      return '<div class="char-card-sub">' + GEAR_SLOT_ICONS[slot] + ' ' + GEAR_SLOT_LABELS[slot] + ': ' + (piece ? gearStatLine(piece.mainStat, piece.mainValue) : 'ว่าง') + '</div>';
-    }).join('') +
+  return '';
+}
+
+/* ---------- แท็บอาวุธ: การ์ดรายชื่ออาวุธที่มี พร้อมรายละเอียดเต็ม ---------- */
+function charDetailWeaponList() {
+  const owned = GACHA_ITEMS.weapon.filter(w => gacha.owned.weapon.indexOf(w.id) !== -1);
+  if (owned.length === 0) return '<div class="char-card-section"><div class="char-card-text char-empty-text">ยังไม่มีอาวุธในคลัง ลองสุ่มที่ 🎰 ตู้กาชาก่อน</div></div>';
+  return '<div class="char-pick-list">' + owned.map(w => {
+    const color = ALL_RARITY_COLORS[w.rarity];
+    const equipped = gacha.equippedWeapon === w.id;
+    const level = gachaGetLevel('weapon', w.id);
+    const cost = gachaLevelUpCost(level);
+    const maxed = level >= GACHA_MAX_LEVEL;
+    return '<div class="char-pick-card" style="--rarity-color:' + color + '">' +
+      '<div class="char-pick-head"><span style="color:' + color + '">' + ALL_RARITY_LABELS[w.rarity] + '</span><span>Lv.' + level + '</span></div>' +
+      '<div class="char-pick-name">' + w.name + '</div>' +
+      '<div class="char-pick-sub"><b>' + w.skillName + '</b> — ' + w.desc + '</div>' +
+      '<div class="char-pick-sub">⚡ ' + w.activeSkill.name + ': ' + w.activeSkill.desc + '</div>' +
+      '<div class="char-pick-actions">' +
+        '<button class="char-pick-btn ' + (equipped ? 'equipped' : '') + '" onclick="gachaEquipWeapon(\'' + w.id + '\'); renderCharacterDetail();">' + (equipped ? '✓ ติดตั้งอยู่' : 'ติดตั้ง') + '</button>' +
+        '<button class="char-pick-btn" ' + (maxed ? 'disabled' : '') + ' onclick="gachaLevelUpUnit(\'weapon\',\'' + w.id + '\'); renderCharacterDetail();">' + (maxed ? 'MAX' : 'อัปเกรด 🔩' + cost) + '</button>' +
+      '</div>' +
     '</div>';
+  }).join('') + '</div>';
+}
+
+/* ---------- แท็บของสวมใส่: เลือกช่องก่อน แล้วโชว์การ์ดของทุกชิ้นในช่องนั้น ---------- */
+function charDetailGearContent() {
+  const slot = charDetailGearActiveSlot || GEAR_SLOTS[0];
+  const equippedId = (gacha.equippedGear || {})[slot];
+  const candidates = (gacha.gearInventory || []).filter(g => g.slot === slot);
+  let html = '<div class="char-slot-picker">' +
+    GEAR_SLOTS.map(s => '<button class="char-slot-chip ' + (s === slot ? 'active' : '') + '" onclick="charDetailGearActiveSlot=\'' + s + '\'; renderCharacterDetail();">' + GEAR_SLOT_ICONS[s] + '<span>' + GEAR_SLOT_LABELS[s] + '</span></button>').join('') +
+    '</div>';
+  if (candidates.length === 0) {
+    html += '<div class="char-card-text char-empty-text">ช่องนี้ยังไม่มีของเลย — ดรอปได้ตอนจบเกม</div>';
+    return html;
+  }
+  html += '<div class="char-pick-list">' + candidates.map(g => {
+    const color = GACHA_RARITY_COLORS[g.rarity];
+    const equipped = equippedId === g.id;
+    const setDef = GEAR_SETS[g.set];
+    return '<div class="char-pick-card" style="--rarity-color:' + color + '">' +
+      '<div class="char-pick-head"><span style="color:' + color + '">' + GACHA_RARITY_LABELS[g.rarity] + '</span><span>' + setDef.icon + ' ' + setDef.name + '</span></div>' +
+      '<div class="char-pick-sub"><b>' + gearStatLine(g.mainStat, g.mainValue) + '</b> (หลัก)</div>' +
+      '<div class="char-pick-sub">' + g.substats.map(s => gearStatLine(s.stat, s.value)).join(' · ') + '</div>' +
+      '<div class="char-pick-actions">' +
+        '<button class="char-pick-btn ' + (equipped ? 'equipped' : '') + '" onclick="gachaEquipGear(\'' + g.id + '\'); renderCharacterDetail();">' + (equipped ? '✓ สวมอยู่' : 'สวมใส่') + '</button>' +
+        '<button class="char-pick-btn danger" onclick="gachaDeleteGear(\'' + g.id + '\'); renderCharacterDetail();">ทิ้ง</button>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+  return html;
 }
 
 function charDetailActionButtons(it, level) {
@@ -94,31 +134,8 @@ function charDetailActionButtons(it, level) {
     const maxed = level >= GACHA_MAX_LEVEL;
     return '<button class="char-action-btn primary" ' + (maxed ? 'disabled' : '') + ' onclick="gachaLevelUpUnit(\'engineer\',\'' + it.id + '\'); renderCharacterDetail();">' + (maxed ? 'เลเวลสูงสุดแล้ว' : 'อัปเกรด') + '</button>';
   }
-  if (charDetailTab === 'weapon') {
-    const ownedWeapons = GACHA_ITEMS.weapon.filter(w => gacha.owned.weapon.indexOf(w.id) !== -1);
-    if (ownedWeapons.length === 0) return '<span class="char-action-hint">ยังไม่มีอาวุธในคลัง</span>';
-    return '<select class="char-action-select" onchange="if(this.value){gachaEquipWeapon(this.value); renderCharacterDetail();}">' +
-      '<option value="">เปลี่ยน</option>' +
-      ownedWeapons.map(w => '<option value="' + w.id + '">' + w.name + (gacha.equippedWeapon === w.id ? ' (ติดตั้งอยู่)' : '') + '</option>').join('') +
-      '</select>';
-  }
-  /* gear */
-  const slot = charDetailGearActiveSlot || GEAR_SLOTS[0];
-  const candidates = (gacha.gearInventory || []).filter(g => g.slot === slot);
-  let html = '<div class="char-gear-slot-picker">';
-  html += GEAR_SLOTS.map(s => '<button class="char-slot-chip ' + (s === slot ? 'active' : '') + '" onclick="charDetailGearActiveSlot=\'' + s + '\'; renderCharacterDetail();">' + GEAR_SLOT_ICONS[s] + '</button>').join('');
-  html += '</div>';
-  if (candidates.length > 0) {
-    html += '<select class="char-action-select" onchange="if(this.value){gachaEquipGear(this.value); renderCharacterDetail();}">' +
-      '<option value="">เลือกของสวมใส่ช่องนี้</option>' +
-      candidates.map(g => '<option value="' + g.id + '">' + GACHA_RARITY_LABELS[g.rarity] + ' • ' + gearStatLine(g.mainStat, g.mainValue) + '</option>').join('') +
-      '</select>';
-  } else {
-    html += '<span class="char-action-hint">ไม่มีของช่องนี้ในคลัง</span>';
-  }
-  return html;
+  return ''; /* weapon/gear: ปุ่มอยู่ในการ์ดแต่ละใบแล้ว */
 }
-let charDetailGearActiveSlot = null;
 
 function renderCharacterDetail() {
   const id = charDetailCurrentId;
@@ -133,12 +150,15 @@ function renderCharacterDetail() {
     '<button class="char-tab-icon ' + (charDetailTab === t.key ? 'active' : '') + '" onclick="charDetailSwitchTab(\'' + t.key + '\')" title="' + t.label + '">' + t.icon + '</button>'
   ).join('');
 
+  const isPickTab = (charDetailTab === 'weapon' || charDetailTab === 'gear');
+  document.getElementById('charInfoCard').className = 'char-info-card' + (isPickTab ? ' char-info-card-wide' : '');
   document.getElementById('charInfoCard').innerHTML =
     '<div class="char-info-name">' + it.name + '</div>' +
     '<div class="char-info-meta"><span style="color:' + color + '">' + ALL_RARITY_LABELS[it.rarity] + '</span> • Lv.' + level + '</div>' +
-    charDetailTabContent(it, level);
+    (charDetailTab === 'weapon' ? charDetailWeaponList() : charDetailTab === 'gear' ? charDetailGearContent() : charDetailInfoContent(it, level));
 
   document.getElementById('charHeroArt').innerHTML = charDetailHeroArt(it, color);
+  document.getElementById('charHeroArt').style.display = isPickTab ? 'none' : '';
   document.getElementById('charActionRow').innerHTML = charDetailActionButtons(it, level);
 }
 
@@ -152,7 +172,7 @@ function showCharacterDetail(id) {
 }
 function closeCharacterDetail() {
   document.getElementById('characterDetailScreen').classList.add('hidden');
-  showEngineerScreen();
+  showLobbyScreen();
 }
 
 buildCharacterDetailUI();

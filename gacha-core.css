@@ -16,7 +16,17 @@
 .gacha-tab-btn.selected { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; border-color: transparent; }
 
 /* ---- ตู้กาชา: เลย์เอาต์เต็มจอแบบ Convene ---- */
-.gacha-banner-screen { position: fixed; inset: 0; padding: 0; background: radial-gradient(circle at 70% 25%, #1e2a52 0%, #0b1226 70%); }
+.gacha-banner-screen {
+  position: fixed; inset: 0; padding: 0;
+  background:
+    radial-gradient(2px 2px at 25% 25%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(2px 2px at 75% 60%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 50% 85%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1.5px 1.5px at 90% 20%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(circle at 70% 25%, #1e2a52 0%, #0b1226 70%);
+  background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 160% 160%;
+  animation: charBgDrift 24s ease-in-out infinite alternate;
+}
 .gacha-currency-bar { position: absolute; top: 14px; right: 14px; z-index: 5; display: flex; gap: 8px; }
 .gacha-currency-chip { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 6px 14px; font-size: 0.82rem; color: #ffd166; }
 
