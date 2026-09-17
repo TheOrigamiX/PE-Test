@@ -47,13 +47,9 @@ function renderEngineerScreen() {
     if (owned) {
       const equipped = gacha.equippedEngineer === it.id;
       const level = gachaGetLevel(ENGINEER_BANNER, it.id);
-      const cost = gachaLevelUpCost(level);
-      const maxed = level >= GACHA_MAX_LEVEL;
       actionHtml =
-        '<div class="gacha-item-level">Lv.' + level + (maxed ? ' (สูงสุด)' : '') + '</div>' +
-        '<div class="gacha-item-skill"><b>⚡ ' + it.activeSkill.name + '</b> — ' + it.activeSkill.desc + '</div>' +
-        '<button class="gacha-equip-btn ' + (equipped ? 'equipped' : '') + '" onclick="gachaEquipEngineer(\'' + it.id + '\')">' + (equipped ? '✓ มอบหมายอยู่' : 'มอบหมาย') + '</button>' +
-        (maxed ? '' : '<button class="gear-discard-btn" style="background:rgba(110,231,168,0.15);color:#6ee7a8;margin-top:4px;width:100%;" onclick="gachaLevelUpUnit(\'' + ENGINEER_BANNER + '\',\'' + it.id + '\')">เลเวลอัพ (🔩' + cost + ')</button>');
+        '<div class="gacha-item-level">Lv.' + level + (equipped ? ' • มอบหมายอยู่' : '') + '</div>' +
+        '<button class="gacha-equip-btn" onclick="showCharacterDetail(\'' + it.id + '\')">เปิดโปรไฟล์</button>';
     }
     return '<div class="gacha-item-card ' + (owned ? '' : 'locked') + '" style="--rarity-color:' + color + '">' +
       '<div class="gacha-item-icon">' + (owned ? '👷' : '🔒') + '</div>' +
