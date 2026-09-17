@@ -1,5 +1,5 @@
 /* ============================================================
-   VoltRush — Skin page (gacha banner: style)
+   VoltRush — Skin page (คอลเลกชันอย่างเดียว สุ่มแยกไปหน้าตู้กาชา)
 ============================================================ */
 const SKIN_BANNER = 'style';
 
@@ -15,27 +15,13 @@ function buildSkinScreenUI() {
       '<h1 style="margin:0;font-size:1.2rem;">🎨 สกินโรงไฟฟ้า</h1>' +
       '<span style="width:1px;"></span>' +
     '</div>' +
-    '<div class="gacha-crystal-bar">💎 <span id="skinCrystalVal">0</span> Volt Crystal</div>' +
-    '<div class="gacha-pity-row">' +
-      '<span id="skinPityText"></span> • เศษสะสม: <span id="skinShardVal">0</span>' +
-      '<button class="gacha-redeem-btn" onclick="gachaRedeemShards(SKIN_BANNER); renderSkinScreen();">แลกเศษ → 💎</button>' +
-    '</div>' +
-    '<div class="start-actions" style="margin:12px 0;">' +
-      '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullOne(SKIN_BANNER)">สุ่ม 1 ครั้ง (💎' + GACHA_PULL_COST + ')</button>' +
-      '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullTen(SKIN_BANNER)">สุ่ม 10 ครั้ง (💎' + GACHA_PULL10_COST + ')</button>' +
-    '</div>' +
+    '<p class="gacha-hint">ดูสกินที่มี/ยังไม่มี — สุ่มสกินใหม่ได้ที่ 🎰 ตู้กาชา ในล็อบบี้</p>' +
     '<div class="gacha-collection-grid" id="skinCollectionGrid"></div>' +
     '</div>';
   document.body.appendChild(screen);
 }
 
 function renderSkinScreen() {
-  document.getElementById('skinCrystalVal').textContent = gacha.crystals;
-  const pityNow = gacha.pity[SKIN_BANNER];
-  const left = GACHA_PITY_HARD - pityNow;
-  document.getElementById('skinPityText').textContent = 'การันตีตำนานในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + GACHA_PITY_HARD + ')';
-  document.getElementById('skinShardVal').textContent = gacha.shards[SKIN_BANNER];
-
   const grid = document.getElementById('skinCollectionGrid');
   const items = GACHA_ITEMS[SKIN_BANNER];
   grid.innerHTML = items.map(it => {

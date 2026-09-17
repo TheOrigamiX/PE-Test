@@ -1,5 +1,5 @@
 /* ============================================================
-   VoltRush — Engineer page (gacha banner: engineer, ระบบ 4★/5★)
+   VoltRush — Engineer page (คอลเลกชันอย่างเดียว สุ่มแยกไปหน้าตู้กาชา)
 ============================================================ */
 const ENGINEER_BANNER = 'engineer';
 
@@ -15,29 +15,13 @@ function buildEngineerScreenUI() {
       '<h1 style="margin:0;font-size:1.2rem;">👷 วิศวกรประจำโรงไฟฟ้า</h1>' +
       '<span style="width:1px;"></span>' +
     '</div>' +
-    '<div class="gacha-crystal-bar">💎 <span id="engCrystalVal">0</span> Volt Crystal • 🔩 <span id="engPartsVal">0</span> ชิ้นส่วน</div>' +
-    '<div class="gacha-pity-row">' +
-      '<span id="engPityText"></span> • เศษสะสม: <span id="engShardVal">0</span>' +
-      '<button class="gacha-redeem-btn" onclick="gachaRedeemShards(ENGINEER_BANNER); renderEngineerScreen();">แลกเศษ → 💎</button>' +
-    '</div>' +
-    '<div class="start-actions" style="margin:12px 0;">' +
-      '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullOne(ENGINEER_BANNER)">สุ่ม 1 ครั้ง (💎' + GACHA_PULL_COST + ')</button>' +
-      '<button class="primary-btn" style="padding:10px 22px;font-size:0.9rem;" onclick="gachaPullTen(ENGINEER_BANNER)">สุ่ม 10 ครั้ง (💎' + GACHA_PULL10_COST + ')</button>' +
-    '</div>' +
-    '<p class="gacha-hint">มอบหมายวิศวกร 1 คนต่อรอบ เพื่อรับสกิลประจำตัว กดซ้ำเพื่อยกเลิกมอบหมาย — ตัวที่ขึ้นเวท (5★): <b>' + GACHA_ITEM_MAP[GACHA_FEATURED.engineer].name + '</b></p>' +
+    '<p class="gacha-hint">กด "เปิดโปรไฟล์" เพื่อมอบหมาย/เลเวลอัพ/จัดของ — สุ่มวิศวกรใหม่ได้ที่ 🎰 ตู้กาชา ในล็อบบี้</p>' +
     '<div class="gacha-collection-grid" id="engCollectionGrid"></div>' +
     '</div>';
   document.body.appendChild(screen);
 }
 
 function renderEngineerScreen() {
-  document.getElementById('engCrystalVal').textContent = gacha.crystals;
-  document.getElementById('engPartsVal').textContent = gacha.parts;
-  const pityNow = gacha.pity[ENGINEER_BANNER];
-  const left = STAR_PITY_HARD - pityNow;
-  document.getElementById('engPityText').textContent = 'การันตี 5★ ในอีก ' + left + ' ครั้ง (สะสม ' + pityNow + '/' + STAR_PITY_HARD + ')';
-  document.getElementById('engShardVal').textContent = gacha.shards[ENGINEER_BANNER];
-
   const grid = document.getElementById('engCollectionGrid');
   const items = GACHA_ITEMS[ENGINEER_BANNER];
   grid.innerHTML = items.map(it => {
