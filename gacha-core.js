@@ -263,6 +263,10 @@ let gacha = gachaDefaultState();
 
 const GACHA_MAX_LEVEL = 10;
 function gachaGetLevel(banner, id) { return (gacha.levels && gacha.levels[banner] && gacha.levels[banner][id]) || 1; }
+function gachaLeveledValue(banner, item) {
+  const level = gachaGetLevel(banner, item.id);
+  return item.value * (1 + (level - 1) * 0.1);
+}
 function gachaLevelUpCost(level) { return level * 5; }
 function gachaLevelUpUnit(banner, id) {
   const level = gachaGetLevel(banner, id);
@@ -515,6 +519,7 @@ function gachaShowReveal(results, banner) {
 function closeGachaReveal() {
   document.getElementById('gachaRevealOverlay').classList.add('hidden');
   /* ปิดหน้าผลสุ่มแล้วรีเฟรชกริดของหน้าปัจจุบัน ถ้ามี */
+  if (typeof renderGachaBannerScreen === 'function' && !document.getElementById('gachaBannerScreen').classList.contains('hidden')) renderGachaBannerScreen();
   if (typeof renderSkinScreen === 'function' && !document.getElementById('skinScreen').classList.contains('hidden')) renderSkinScreen();
   if (typeof renderBlueprintScreen === 'function' && !document.getElementById('blueprintScreen').classList.contains('hidden')) renderBlueprintScreen();
   if (typeof renderEngineerScreen === 'function' && !document.getElementById('engineerScreen').classList.contains('hidden')) renderEngineerScreen();
