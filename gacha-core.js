@@ -499,6 +499,19 @@ function gachaEquipWeapon(id) {
   if (typeof renderWeaponScreen === 'function') renderWeaponScreen();
   showToast(gacha.equippedWeapon ? '✅ ติดตั้งอาวุธแล้ว!' : 'ถอดอาวุธแล้ว');
 }
+function gachaUnequipWeapon() {
+  gacha.equippedWeapon = null;
+  saveGachaState();
+  if (typeof renderWeaponScreen === 'function') renderWeaponScreen();
+  showToast('ถอดอาวุธแล้ว');
+}
+function gachaUnequipGear(slot) {
+  gacha.equippedGear = gacha.equippedGear || {};
+  gacha.equippedGear[slot] = null;
+  saveGachaState();
+  if (typeof renderGearScreen === 'function') renderGearScreen();
+  showToast('ถอดของสวมใส่แล้ว');
+}
 
 /* ---------- reveal modal (shared, one instance reused by every page) ---------- */
 function gachaShowReveal(results, banner) {

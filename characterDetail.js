@@ -16,7 +16,6 @@ const GACHA_STAT_LABELS_SHORT = { incomeBoost: 'ผลผลิต', upgradeDisc
 let charDetailCurrentId = null;
 let charDetailTab = 'skill';
 let charDetailGearActiveSlot = null;
-let charDetailSelectedWeaponId = null;
 let charDetailWeaponMode = 'view'; /* view | switch */
 let charDetailGearMode = 'view';   /* view | switch */
 
@@ -76,33 +75,36 @@ function charDetailInfoContent(it, level) {
     '<div class="char-card-sub">มี 🔩 ชิ้นส่วนอยู่ ' + gacha.parts + ' ชิ้น</div></div>';
 }
 
-/* ---------- แท็บอาวุธ: โชว์ชิ้นเดียวเต็มจอแบบหน้าอาวุธจริง ---------- */
+/* ---------- แท็บอาวุธ: โชว์อาวุธที่ "ติดตั้งอยู่จริง" เท่านั้น (หรือว่างถ้าไม่มี) ---------- */
 function charDetailWeaponBlock() {
   const ownedWeapons = GACHA_ITEMS.weapon.filter(w => gacha.owned.weapon.indexOf(w.id) !== -1);
-  if (ownedWeapons.length === 0) {
-    return { card: '<div class="char-card-text char-empty-text">ยังไม่มีอาวุธในคลัง ลองสุ่มที่ 🎰 ตู้กาชาก่อน</div>', hero: null, actions: '' };
-  }
-  if (!charDetailSelectedWeaponId || ownedWeapons.every(w => w.id !== charDetailSelectedWeaponId)) {
-    charDetailSelectedWeaponId = gacha.equippedWeapon || ownedWeapons[0].id;
-  }
 
   if (charDetailWeaponMode === 'switch') {
+    if (ownedWeapons.length === 0) {
+      return { card: '<div class="char-card-text char-empty-text">ยังไม่มีอาวุธในคลัง ลองสุ่มที่ 🎰 ตู้กาชาก่อน</div>', hero: null, actions: '<button class="char-action-btn" onclick="charDetailWeaponMode=\'view\'; renderCharacterDetail();">ย้อนกลับ</button>' };
+    }
     const card = '<div class="char-card-label" style="margin-bottom:8px;">เลือกอาวุธ</div>' +
-      '<div class="char-switch-list">' + ownedWeapons.map(w => {
+      '<div class="char-switch-list">' +
+      '<button class="char-switch-item" onclick="gachaUnequipWeapon(); charDetailWeaponMode=\'view\'; renderCharacterDetail();"><span>— ไม่ติดตั้งอาวุธ —</span>' + (!gacha.equippedWeapon ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
+      ownedWeapons.map(w => {
         const color = ALL_RARITY_COLORS[w.rarity];
         const eq = gacha.equippedWeapon === w.id;
-        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipWeapon(\'' + w.id + '\'); charDetailSelectedWeaponId=\'' + w.id + '\'; charDetailWeaponMode=\'view\'; renderCharacterDetail();">' +
+        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipWeapon(\'' + w.id + '\'); charDetailWeaponMode=\'view\'; renderCharacterDetail();">' +
           '<span>' + w.name + '</span><span style="color:' + color + '">' + ALL_RARITY_LABELS[w.rarity] + '</span>' + (eq ? '<span class="char-equipped-tag">ติดตั้งอยู่</span>' : '') +
           '</button>';
       }).join('') + '</div>';
     return { card: card, hero: null, actions: '<button class="char-action-btn" onclick="charDetailWeaponMode=\'view\'; renderCharacterDetail();">ยกเลิก</button>' };
   }
 
-  const w = GACHA_ITEM_MAP[charDetailSelectedWeaponId];
+  if (!gacha.equippedWeapon) {
+    const actions = ownedWeapons.length > 0 ? '<button class="char-action-btn primary" onclick="charDetailWeaponMode=\'switch\'; renderCharacterDetail();">เลือกอาวุธ</button>' : '';
+    return { card: '<div class="char-card-text char-empty-text">ยังไม่ได้ติดตั้งอาวุธ</div>', hero: null, actions: actions };
+  }
+
+  const w = GACHA_ITEM_MAP[gacha.equippedWeapon];
   const level = gachaGetLevel('weapon', w.id);
   const leveledValue = gachaLeveledValue('weapon', w);
   const color = ALL_RARITY_COLORS[w.rarity];
-  const equipped = gacha.equippedWeapon === w.id;
   const maxed = level >= GACHA_MAX_LEVEL;
   const cost = gachaLevelUpCost(level);
   const statLines = w.perk === 'allRounder'
@@ -110,7 +112,7 @@ function charDetailWeaponBlock() {
     : [{ label: GACHA_STAT_LABELS_SHORT[w.perk], value: leveledValue }];
 
   const card =
-    '<div class="char-item-title-row"><span class="char-info-name">' + w.name + '</span>' + (equipped ? '<span class="char-equipped-tag">ติดตั้งอยู่</span>' : '') + '</div>' +
+    '<div class="char-item-title-row"><span class="char-info-name">' + w.name + '</span><span class="char-equipped-tag">ติดตั้งอยู่</span></div>' +
     '<div class="char-item-level-row"><span class="char-card-big">Lv.' + level + ' / ' + GACHA_MAX_LEVEL + '</span>' + (maxed ? '<span class="char-max-tag">MAX</span>' : '') + '</div>' +
     '<div class="char-starline" style="color:' + color + '">' + '★'.repeat(w.rarity === 'r5' ? 5 : 4) + '</div>' +
     '<div class="char-stat-block">' + statLines.map(s => '<div class="char-stat-line"><span>' + s.label + '</span><span class="char-stat-value">+' + (s.value * 100).toFixed(1) + '%</span></div>').join('') + '</div>' +
@@ -123,7 +125,7 @@ function charDetailWeaponBlock() {
   return { card: card, hero: charHeroGlow('🔧', w.rarity, color), actions: actions };
 }
 
-/* ---------- แท็บของสวมใส่: เลือกช่องก่อน โชว์ชิ้นที่สวมอยู่แบบเต็ม ---------- */
+/* ---------- แท็บของสวมใส่: เลือกช่องก่อน โชว์ชิ้นที่สวมอยู่จริงเท่านั้น ---------- */
 function charDetailGearBlock() {
   const slot = charDetailGearActiveSlot || GEAR_SLOTS[0];
   const slotPicker = '<div class="char-slot-picker">' +
@@ -132,13 +134,14 @@ function charDetailGearBlock() {
   const candidates = (gacha.gearInventory || []).filter(g => g.slot === slot);
   const equippedId = (gacha.equippedGear || {})[slot];
 
-  if (candidates.length === 0) {
-    return { card: slotPicker + '<div class="char-card-text char-empty-text">ช่องนี้ยังไม่มีของเลย — ดรอปได้ตอนจบเกม</div>', hero: null, actions: '' };
-  }
-
   if (charDetailGearMode === 'switch') {
+    if (candidates.length === 0) {
+      return { card: slotPicker + '<div class="char-card-text char-empty-text">ช่องนี้ยังไม่มีของเลย</div>', hero: null, actions: '<button class="char-action-btn" onclick="charDetailGearMode=\'view\'; renderCharacterDetail();">ย้อนกลับ</button>' };
+    }
     const card = slotPicker + '<div class="char-card-label" style="margin:8px 0;">เลือกของสวมใส่</div>' +
-      '<div class="char-switch-list">' + candidates.map(g => {
+      '<div class="char-switch-list">' +
+      '<button class="char-switch-item" onclick="gachaUnequipGear(\'' + slot + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();"><span>— ไม่สวมช่องนี้ —</span>' + (!equippedId ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
+      candidates.map(g => {
         const color = GACHA_RARITY_COLORS[g.rarity];
         const eq = equippedId === g.id;
         return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipGear(\'' + g.id + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();">' +
@@ -148,13 +151,21 @@ function charDetailGearBlock() {
     return { card: card, hero: null, actions: '<button class="char-action-btn" onclick="charDetailGearMode=\'view\'; renderCharacterDetail();">ยกเลิก</button>' };
   }
 
-  const piece = equippedId ? candidates.find(g => g.id === equippedId) : candidates[0];
+  if (!equippedId) {
+    const actions = candidates.length > 0 ? '<button class="char-action-btn primary" onclick="charDetailGearMode=\'switch\'; renderCharacterDetail();">เลือกของสวมใส่</button>' : '';
+    return { card: slotPicker + '<div class="char-card-text char-empty-text">ช่องนี้ว่างอยู่' + (candidates.length === 0 ? ' — ดรอปได้ตอนจบเกม' : '') + '</div>', hero: null, actions: actions };
+  }
+
+  const piece = candidates.find(g => g.id === equippedId);
+  if (!piece) {
+    /* กันเคสข้อมูลไม่ตรงกัน (ของถูกลบไปแล้วแต่ค่ายังค้าง) */
+    return { card: slotPicker + '<div class="char-card-text char-empty-text">ช่องนี้ว่างอยู่</div>', hero: null, actions: candidates.length > 0 ? '<button class="char-action-btn primary" onclick="charDetailGearMode=\'switch\'; renderCharacterDetail();">เลือกของสวมใส่</button>' : '' };
+  }
   const color = GACHA_RARITY_COLORS[piece.rarity];
   const setDef = GEAR_SETS[piece.set];
-  const equipped = equippedId === piece.id;
 
   const card = slotPicker +
-    '<div class="char-item-title-row"><span class="char-info-name">' + GEAR_SLOT_LABELS[slot] + '</span>' + (equipped ? '<span class="char-equipped-tag">สวมอยู่</span>' : '') + '</div>' +
+    '<div class="char-item-title-row"><span class="char-info-name">' + GEAR_SLOT_LABELS[slot] + '</span><span class="char-equipped-tag">สวมอยู่</span></div>' +
     '<div class="char-info-meta" style="color:' + color + ';">' + GACHA_RARITY_LABELS[piece.rarity] + ' • ' + setDef.icon + ' ' + setDef.name + '</div>' +
     '<div class="char-stat-block">' +
       '<div class="char-stat-line"><span>' + gearStatLine(piece.mainStat, piece.mainValue).split(' +')[0] + ' (หลัก)</span><span class="char-stat-value">' + gearStatLine(piece.mainStat, piece.mainValue).split(' ').pop() + '</span></div>' +
