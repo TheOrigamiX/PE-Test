@@ -39,7 +39,7 @@ function switchGachaBannerTab(banner) {
 function renderGachaBannerScreen() {
   document.getElementById('gachaCurrencyBar').innerHTML =
     '<div class="gacha-currency-chip">💎 <b>' + gacha.crystals + '</b></div>' +
-    '<div class="gacha-currency-chip">🔩 <b>' + gacha.parts + '</b></div>';
+    '<div class="gacha-currency-chip">🪙 <b>' + gacha.coins + '</b></div>';
 
   document.getElementById('gachaBannerList').innerHTML = GACHA_BANNER_TABS.map(t => {
     const isStar = gachaIsStarBanner(t.key);

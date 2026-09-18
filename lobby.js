@@ -31,6 +31,10 @@ function refreshLobbyStats() {
   if (nameEl) nameEl.textContent = profile.name;
   const crystalEl = document.getElementById('lobbyCrystalVal');
   if (crystalEl) crystalEl.textContent = gacha.crystals;
+  const coinEl = document.getElementById('lobbyCoinVal');
+  if (coinEl) coinEl.textContent = gacha.coins;
+  const playerLevelEl = document.getElementById('lobbyPlayerLevel');
+  if (playerLevelEl) playerLevelEl.textContent = gacha.playerLevel;
   const skinCountEl = document.getElementById('lobbySkinCount');
   const bpCountEl = document.getElementById('lobbyBlueprintCount');
   const engCountEl = document.getElementById('lobbyEngineerCount');
@@ -61,6 +65,7 @@ function buildLobbyScreenUI() {
         '<div class="lobby-hero-content">' +
           '<div class="lobby-hero-title">ศูนย์บัญชาการพลังงาน VoltRush</div>' +
           '<div class="lobby-crystal-pill">💎 <span id="lobbyCrystalVal">0</span> Volt Crystal</div>' +
+          '<div class="lobby-crystal-pill" style="margin-left:8px;">🪙 <span id="lobbyCoinVal">0</span> • Lv.<span id="lobbyPlayerLevel">1</span></div>' +
           '<button class="primary-btn lobby-play-btn" onclick="goToStartScreenFromLobby()">🚀 เริ่มบริหารเมือง</button>' +
         '</div>' +
       '</div>' +

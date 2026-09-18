@@ -209,7 +209,7 @@ function gachaGearBonusTotals() {
   const equippedIds = Object.values(gacha.equippedGear || {}).filter(Boolean);
   const pieces = equippedIds.map(id => (gacha.gearInventory || []).find(g => g.id === id)).filter(Boolean);
   pieces.forEach(g => {
-    totals[g.mainStat] = (totals[g.mainStat] || 0) + g.mainValue;
+    totals[g.mainStat] = (totals[g.mainStat] || 0) + gachaGearEffectiveMainValue(g);
     g.substats.forEach(s => { totals[s.stat] = (totals[s.stat] || 0) + s.value; });
   });
   const setCounts = {};
@@ -227,7 +227,16 @@ function gachaGearBonusTotals() {
 function gachaDefaultState() {
   return {
     crystals: 300,
-    parts: 0,
+    coins: 0,
+    playerLevel: 1,
+    playerExp: 0,
+    materials: {
+      engExpS: 0, engExpM: 0, engExpL: 0,
+      wpnExpS: 0, wpnExpM: 0, wpnExpL: 0,
+      engCoreT1: 0, engCoreT2: 0, engCoreT3: 0, engCoreT4: 0,
+      wpnCoreT1: 0, wpnCoreT2: 0, wpnCoreT3: 0, wpnCoreT4: 0,
+      gearTunerT1: 0, gearTunerT2: 0, gearTunerT3: 0
+    },
     pity: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
     shards: { style: 0, blueprint: 0, engineer: 0, weapon: 0 },
     owned: { style: [], blueprint: [], engineer: [], weapon: [] },
@@ -242,9 +251,14 @@ function gachaDefaultState() {
 function gachaMergeWithDefault(saved) {
   const def = gachaDefaultState();
   if (!saved) return def;
+  /* ของเก่า: 🔩 "parts" เดี่ยวๆ ก่อนมีระบบเหรียญ+วัสดุ ย้ายมาเป็นเหรียญให้ครั้งเดียว */
+  const migratedCoins = typeof saved.coins === 'number' ? saved.coins : (typeof saved.parts === 'number' ? saved.parts : def.coins);
   return {
     crystals: typeof saved.crystals === 'number' ? saved.crystals : def.crystals,
-    parts: typeof saved.parts === 'number' ? saved.parts : def.parts,
+    coins: migratedCoins,
+    playerLevel: typeof saved.playerLevel === 'number' ? saved.playerLevel : def.playerLevel,
+    playerExp: typeof saved.playerExp === 'number' ? saved.playerExp : def.playerExp,
+    materials: Object.assign({}, def.materials, saved.materials || {}),
     pity: Object.assign({}, def.pity, saved.pity || {}),
     shards: Object.assign({}, def.shards, saved.shards || {}),
     owned: Object.assign({}, def.owned, saved.owned || {}),
@@ -261,33 +275,135 @@ function gachaMergeWithDefault(saved) {
 }
 let gacha = gachaDefaultState();
 
+/* ---------- เลเวลตัวละคร/อาวุธ: EXP + ตื่นพลัง (แบบ WuWa) ---------- */
 const GACHA_MAX_LEVEL = 10;
-function gachaGetLevel(banner, id) { return (gacha.levels && gacha.levels[banner] && gacha.levels[banner][id]) || 1; }
+const GACHA_ASCEND_BREAKPOINTS = [2, 4, 6, 8]; /* ต้องตื่นพลังก่อนถึงจะอัพเลเวลผ่านจุดนี้ได้ */
+const GACHA_XP_MATERIALS = {
+  engineer: {
+    s: { key: 'engExpS', name: 'ตำราประสบการณ์วิศวกร (เล็ก)', label: 'เล็ก', exp: 20 },
+    m: { key: 'engExpM', name: 'ตำราประสบการณ์วิศวกร (กลาง)', label: 'กลาง', exp: 80 },
+    l: { key: 'engExpL', name: 'ตำราประสบการณ์วิศวกร (ใหญ่)', label: 'ใหญ่', exp: 300 }
+  },
+  weapon: {
+    s: { key: 'wpnExpS', name: 'ตำราประสบการณ์อาวุธ (เล็ก)', label: 'เล็ก', exp: 20 },
+    m: { key: 'wpnExpM', name: 'ตำราประสบการณ์อาวุธ (กลาง)', label: 'กลาง', exp: 80 },
+    l: { key: 'wpnExpL', name: 'ตำราประสบการณ์อาวุธ (ใหญ่)', label: 'ใหญ่', exp: 300 }
+  }
+};
+const GACHA_ASCEND_MAT_PREFIX = { engineer: 'engCoreT', weapon: 'wpnCoreT' };
+const GACHA_ASCEND_MAT_NAMES = { engineer: 'แกนพลังวิศวกร', weapon: 'แกนพลังอาวุธ' };
+
+function gachaXpNeeded(level) { return level * 120; }
+function gachaGetUnitData(banner, id) {
+  gacha.levels[banner] = gacha.levels[banner] || {};
+  const cur = gacha.levels[banner][id];
+  if (!cur || typeof cur !== 'object') {
+    const legacyLevel = typeof cur === 'number' ? cur : 1;
+    gacha.levels[banner][id] = { level: legacyLevel, xp: 0, ascended: 0 };
+  }
+  return gacha.levels[banner][id];
+}
+function gachaGetLevel(banner, id) { return gachaGetUnitData(banner, id).level; }
 function gachaLeveledValue(banner, item) {
   const level = gachaGetLevel(banner, item.id);
   return item.value * (1 + (level - 1) * 0.1);
 }
-function gachaLevelUpCost(level) { return level * 5; }
-function gachaLevelUpUnit(banner, id) {
-  const level = gachaGetLevel(banner, id);
-  if (level >= GACHA_MAX_LEVEL) { showToast('เลเวลสูงสุดแล้ว (Lv.' + GACHA_MAX_LEVEL + ')'); return; }
-  const cost = gachaLevelUpCost(level);
-  if (gacha.parts < cost) { showToast('ชิ้นส่วนไม่พอ ต้องการ ' + cost + ' ชิ้น (มี ' + gacha.parts + ')'); return; }
-  gacha.parts -= cost;
-  gacha.levels[banner] = gacha.levels[banner] || {};
-  gacha.levels[banner][id] = level + 1;
+/* คืนค่า tier (1-4) ที่ต้องตื่นพลังก่อนถึงจะอัพเลเวลต่อได้ หรือ 0 ถ้าไม่ติดขัด */
+function gachaPendingAscendTier(banner, id) {
+  const data = gachaGetUnitData(banner, id);
+  for (let i = 0; i < GACHA_ASCEND_BREAKPOINTS.length; i++) {
+    if (data.level >= GACHA_ASCEND_BREAKPOINTS[i] && data.ascended <= i) return i + 1;
+  }
+  return 0;
+}
+function gachaAscendCost(banner, tier) { return { matKey: GACHA_ASCEND_MAT_PREFIX[banner] + tier, qty: 3, coins: tier * 100 }; }
+function gachaAscendUnit(banner, id) {
+  const tier = gachaPendingAscendTier(banner, id);
+  if (tier === 0) { showToast('ยังไม่ถึงจุดที่ต้องตื่นพลัง'); return; }
+  const matKey = GACHA_ASCEND_MAT_PREFIX[banner] + tier;
+  const qty = 3, coinCost = tier * 100;
+  if ((gacha.materials[matKey] || 0) < qty || gacha.coins < coinCost) {
+    showToast('ตื่นพลังไม่สำเร็จ ต้องการ ' + GACHA_ASCEND_MAT_NAMES[banner] + ' ระดับ ' + tier + ' x' + qty + ' + 🪙' + coinCost);
+    return;
+  }
+  gacha.materials[matKey] -= qty;
+  gacha.coins -= coinCost;
+  gachaGetUnitData(banner, id).ascended = tier;
   saveGachaState();
   if (typeof sndUpgrade === 'function') sndUpgrade();
-  showToast('⬆️ เลเวลอัพ! ตอนนี้ Lv.' + (level + 1));
-  if (typeof renderEngineerScreen === 'function') renderEngineerScreen();
-  if (typeof renderWeaponScreen === 'function') renderWeaponScreen();
+  showToast('✨ ตื่นพลังสำเร็จ! อัพเลเวลต่อได้แล้ว');
 }
-/* ดรอปชิ้นส่วนอัพเกรดหลังจบเกม (ใช้กับทั้งวิศวกรและอาวุธ) ตามคะแนน */
-function gachaAwardPartsDrop(finalScore) {
-  const amt = Math.max(3, Math.floor(finalScore / 30) + Math.floor(Math.random() * 6));
-  gacha.parts += amt;
+/* ใช้ตำรา EXP 1 เล่ม (tomeSize: 's'|'m'|'l') เพิ่ม EXP แล้วเลื่อนเลเวลอัตโนมัติถ้า EXP พอ (และไม่ติดจุดตื่นพลัง) */
+function gachaUseExpTome(banner, id, tomeSize) {
+  const matDef = GACHA_XP_MATERIALS[banner][tomeSize];
+  const data = gachaGetUnitData(banner, id);
+  if (data.level >= GACHA_MAX_LEVEL) { showToast('เลเวลสูงสุดแล้ว (Lv.' + GACHA_MAX_LEVEL + ')'); return; }
+  if ((gacha.materials[matDef.key] || 0) < 1) { showToast('ไม่มี ' + matDef.name); return; }
+  const coinCost = Math.ceil(matDef.exp / 4);
+  if (gacha.coins < coinCost) { showToast('เหรียญไม่พอ ต้องการ 🪙' + coinCost); return; }
+  gacha.materials[matDef.key] -= 1;
+  gacha.coins -= coinCost;
+  data.xp += matDef.exp;
+  while (data.level < GACHA_MAX_LEVEL) {
+    const need = gachaXpNeeded(data.level);
+    if (data.xp < need) break;
+    if (gachaPendingAscendTier(banner, id) > 0) break; /* EXP เกินพอแต่ติดจุดตื่นพลัง รอไว้ก่อน */
+    data.xp -= need;
+    data.level += 1;
+  }
   saveGachaState();
-  showToast('🔩 ได้ชิ้นส่วนอัพเกรด ' + amt + ' ชิ้น');
+  if (typeof sndUpgrade === 'function') sndUpgrade();
+  showToast('📘 ใช้ ' + matDef.name + ' (+' + matDef.exp + ' EXP)');
+}
+
+/* ---------- เลเวลของสวมใส่ (echo): ใช้ทูนเนอร์ตามระดับความหายาก ---------- */
+const GACHA_GEAR_MAX_LEVEL = 5;
+function gachaGearTunerTier(rarity) { if (rarity === 'legendary') return 3; if (rarity === 'epic') return 2; return 1; }
+function gachaGearLevelUpCost(piece) {
+  const tier = gachaGearTunerTier(piece.rarity);
+  const qty = (piece.level || 0) + 1;
+  return { matKey: 'gearTunerT' + tier, qty: qty, coins: qty * 20, tier: tier };
+}
+function gachaGearEffectiveMainValue(piece) { return piece.mainValue * (1 + (piece.level || 0) * 0.2); }
+function gachaLevelUpGear(gearId) {
+  const piece = (gacha.gearInventory || []).find(g => g.id === gearId);
+  if (!piece) return;
+  if ((piece.level || 0) >= GACHA_GEAR_MAX_LEVEL) { showToast('ของชิ้นนี้ถึงเลเวลสูงสุดแล้ว (Lv.' + GACHA_GEAR_MAX_LEVEL + ')'); return; }
+  const cost = gachaGearLevelUpCost(piece);
+  if ((gacha.materials[cost.matKey] || 0) < cost.qty || gacha.coins < cost.coins) {
+    showToast('คริสตัลปรับแต่งระดับ ' + cost.tier + ' หรือเหรียญไม่พอ ต้องการ x' + cost.qty + ' + 🪙' + cost.coins);
+    return;
+  }
+  gacha.materials[cost.matKey] -= cost.qty;
+  gacha.coins -= cost.coins;
+  piece.level = (piece.level || 0) + 1;
+  saveGachaState();
+  if (typeof sndUpgrade === 'function') sndUpgrade();
+  showToast('⬆️ อัพเกรดของสวมใส่แล้ว! Lv.' + piece.level);
+}
+
+/* ---------- เลเวลผู้เล่น (account level) — เฟส 2 ค่อยออกแบบวิธีได้ EXP ผู้เล่น ---------- */
+const GACHA_PLAYER_LEVEL_CAP = 60;
+function gachaPlayerXpNeeded(level) { return level * 200; }
+function gachaAddPlayerExp(amount) {
+  if (gacha.playerLevel >= GACHA_PLAYER_LEVEL_CAP) return;
+  gacha.playerExp += amount;
+  let leveledUp = false;
+  while (gacha.playerLevel < GACHA_PLAYER_LEVEL_CAP && gacha.playerExp >= gachaPlayerXpNeeded(gacha.playerLevel)) {
+    gacha.playerExp -= gachaPlayerXpNeeded(gacha.playerLevel);
+    gacha.playerLevel += 1;
+    leveledUp = true;
+  }
+  saveGachaState();
+  if (leveledUp) showToast('🎉 เลเวลผู้เล่นเพิ่มเป็น Lv.' + gacha.playerLevel + '!');
+}
+
+/* ดรอปเหรียญ 🪙 หลังจบเกมตามคะแนน (ใช้เป็นค่าใช้จ่ายร่วมของทุกการอัพเกรด — วัสดุเฉพาะทาง (ตำรา/แกนพลัง/ทูนเนอร์) ยังไม่เปิดดรอป รอออกแบบวิธีได้รับในเฟส 2) */
+function gachaAwardPartsDrop(finalScore) {
+  const amt = Math.max(10, Math.floor(finalScore / 10) + Math.floor(Math.random() * 15));
+  gacha.coins += amt;
+  saveGachaState();
+  showToast('🪙 ได้เหรียญโวลต์ ' + amt + ' เหรียญ');
   return amt;
 }
 
