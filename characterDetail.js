@@ -105,33 +105,37 @@ function charDetailInfoContent(it, level) {
   return charDetailLevelBlock('engineer', it.id);
 }
 
-/* ---------- แท็บอาวุธ: โชว์อาวุธที่ "ติดตั้งอยู่จริง" เท่านั้น (หรือว่างถ้าไม่มี) ---------- */
+/* ---------- แท็บอาวุธ: อาวุธของ "ตัวละครนี้" เท่านั้น (1 ชิ้นต่อ 1 ตัว แยกกันจริง) ---------- */
 function charDetailWeaponBlock() {
+  const engineerId = charDetailCurrentId;
+  const loadout = gachaGetLoadout(engineerId);
   const ownedWeapons = GACHA_ITEMS.weapon.filter(w => gacha.owned.weapon.indexOf(w.id) !== -1);
 
   if (charDetailWeaponMode === 'switch') {
     if (ownedWeapons.length === 0) {
       return { card: '<div class="char-card-text char-empty-text">ยังไม่มีอาวุธในคลัง ลองสุ่มที่ 🎰 ตู้กาชาก่อน</div>', hero: null, actions: '<button class="char-action-btn" onclick="charDetailWeaponMode=\'view\'; renderCharacterDetail();">ย้อนกลับ</button>' };
     }
-    const card = '<div class="char-card-label" style="margin-bottom:8px;">เลือกอาวุธ</div>' +
+    const card = '<div class="char-card-label" style="margin-bottom:8px;">เลือกอาวุธ (ติดตั้งได้คนละ 1 ชิ้น)</div>' +
       '<div class="char-switch-list">' +
-      '<button class="char-switch-item" onclick="gachaUnequipWeapon(); charDetailWeaponMode=\'view\'; renderCharacterDetail();"><span>— ไม่ติดตั้งอาวุธ —</span>' + (!gacha.equippedWeapon ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
+      '<button class="char-switch-item" onclick="gachaUnequipWeaponFor(\'' + engineerId + '\'); charDetailWeaponMode=\'view\'; renderCharacterDetail();"><span>— ไม่ติดตั้งอาวุธ —</span>' + (!loadout.weapon ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
       ownedWeapons.map(w => {
         const color = ALL_RARITY_COLORS[w.rarity];
-        const eq = gacha.equippedWeapon === w.id;
-        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipWeapon(\'' + w.id + '\'); charDetailWeaponMode=\'view\'; renderCharacterDetail();">' +
-          '<span>' + w.name + '</span><span style="color:' + color + '">' + ALL_RARITY_LABELS[w.rarity] + '</span>' + (eq ? '<span class="char-equipped-tag">ติดตั้งอยู่</span>' : '') +
+        const eq = loadout.weapon === w.id;
+        const wearer = !eq ? gachaFindWeaponWearer(w.id) : null;
+        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipWeaponFor(\'' + engineerId + '\',\'' + w.id + '\'); charDetailWeaponMode=\'view\'; renderCharacterDetail();">' +
+          '<span>' + w.name + '</span><span style="color:' + color + '">' + ALL_RARITY_LABELS[w.rarity] + '</span>' +
+          (eq ? '<span class="char-equipped-tag">ติดตั้งอยู่</span>' : wearer ? '<span class="char-wearer-tag">ใส่อยู่ที่ ' + wearer + '</span>' : '') +
           '</button>';
       }).join('') + '</div>';
     return { card: card, hero: null, actions: '<button class="char-action-btn" onclick="charDetailWeaponMode=\'view\'; renderCharacterDetail();">ยกเลิก</button>' };
   }
 
-  if (!gacha.equippedWeapon) {
+  if (!loadout.weapon) {
     const actions = ownedWeapons.length > 0 ? '<button class="char-action-btn primary" onclick="charDetailWeaponMode=\'switch\'; renderCharacterDetail();">เลือกอาวุธ</button>' : '';
     return { card: '<div class="char-card-text char-empty-text">ยังไม่ได้ติดตั้งอาวุธ</div>', hero: null, actions: actions };
   }
 
-  const w = GACHA_ITEM_MAP[gacha.equippedWeapon];
+  const w = GACHA_ITEM_MAP[loadout.weapon];
   const level = gachaGetLevel('weapon', w.id);
   const leveledValue = gachaLeveledValue('weapon', w);
   const color = ALL_RARITY_COLORS[w.rarity];
@@ -154,27 +158,31 @@ function charDetailWeaponBlock() {
   return { card: card, hero: charHeroGlow('🔧', w.rarity, color), actions: actions };
 }
 
-/* ---------- แท็บของสวมใส่: เลือกช่องก่อน โชว์ชิ้นที่สวมอยู่จริงเท่านั้น ---------- */
+/* ---------- แท็บของสวมใส่: ของ "ตัวละครนี้" เท่านั้น (แยกกันจริงทีละคน) ---------- */
 function charDetailGearBlock() {
+  const engineerId = charDetailCurrentId;
+  const loadout = gachaGetLoadout(engineerId);
   const slot = charDetailGearActiveSlot || GEAR_SLOTS[0];
   const slotPicker = '<div class="char-slot-picker">' +
     GEAR_SLOTS.map(s => '<button class="char-slot-chip ' + (s === slot ? 'active' : '') + '" onclick="charDetailGearActiveSlot=\'' + s + '\'; charDetailGearMode=\'view\'; renderCharacterDetail();">' + GEAR_SLOT_ICONS[s] + '<span>' + GEAR_SLOT_LABELS[s] + '</span></button>').join('') +
     '</div>';
   const candidates = (gacha.gearInventory || []).filter(g => g.slot === slot);
-  const equippedId = (gacha.equippedGear || {})[slot];
+  const equippedId = loadout.gear[slot];
 
   if (charDetailGearMode === 'switch') {
     if (candidates.length === 0) {
       return { card: slotPicker + '<div class="char-card-text char-empty-text">ช่องนี้ยังไม่มีของเลย</div>', hero: null, actions: '<button class="char-action-btn" onclick="charDetailGearMode=\'view\'; renderCharacterDetail();">ย้อนกลับ</button>' };
     }
-    const card = slotPicker + '<div class="char-card-label" style="margin:8px 0;">เลือกของสวมใส่</div>' +
+    const card = slotPicker + '<div class="char-card-label" style="margin:8px 0;">เลือกของสวมใส่ (ใส่ได้คนละ 1 ชิ้นต่อช่อง)</div>' +
       '<div class="char-switch-list">' +
-      '<button class="char-switch-item" onclick="gachaUnequipGear(\'' + slot + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();"><span>— ไม่สวมช่องนี้ —</span>' + (!equippedId ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
+      '<button class="char-switch-item" onclick="gachaUnequipGearFor(\'' + engineerId + '\',\'' + slot + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();"><span>— ไม่สวมช่องนี้ —</span>' + (!equippedId ? '<span class="char-equipped-tag">ปัจจุบัน</span>' : '') + '</button>' +
       candidates.map(g => {
         const color = GACHA_RARITY_COLORS[g.rarity];
         const eq = equippedId === g.id;
-        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipGear(\'' + g.id + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();">' +
-          '<span>' + gearStatLine(g.mainStat, gachaGearEffectiveMainValue(g)) + ' (Lv.' + (g.level || 0) + ')</span><span style="color:' + color + '">' + GACHA_RARITY_LABELS[g.rarity] + '</span>' + (eq ? '<span class="char-equipped-tag">สวมอยู่</span>' : '') +
+        const wearer = !eq ? gachaFindGearWearer(g.id) : null;
+        return '<button class="char-switch-item" style="--rarity-color:' + color + '" onclick="gachaEquipGearFor(\'' + engineerId + '\',\'' + g.id + '\'); charDetailGearMode=\'view\'; renderCharacterDetail();">' +
+          '<span>' + gearStatLine(g.mainStat, gachaGearEffectiveMainValue(g)) + ' (Lv.' + (g.level || 0) + ')</span><span style="color:' + color + '">' + GACHA_RARITY_LABELS[g.rarity] + '</span>' +
+          (eq ? '<span class="char-equipped-tag">สวมอยู่</span>' : wearer ? '<span class="char-wearer-tag">ใส่อยู่ที่ ' + wearer + '</span>' : '') +
           '</button>';
       }).join('') + '</div>';
     return { card: card, hero: null, actions: '<button class="char-action-btn" onclick="charDetailGearMode=\'view\'; renderCharacterDetail();">ยกเลิก</button>' };

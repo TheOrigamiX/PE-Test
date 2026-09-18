@@ -7,6 +7,7 @@
 .lobby-who { display: flex; align-items: center; gap: 10px; }
 .lobby-avatar { font-size: 1.6rem; background: rgba(255,255,255,0.08); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
 .lobby-name { font-size: 1rem; font-weight: 800; color: #e6ecf7; }
+.lobby-player-level { font-size: 0.68rem; font-weight: 800; color: #ffd166; margin-top: 1px; }
 .lobby-logout-btn { background: none; border: none; color: #6d8099; font-size: 0.76rem; cursor: pointer; text-decoration: underline; }
 
 /* ---- hero: the one bold moment on this page ---- */

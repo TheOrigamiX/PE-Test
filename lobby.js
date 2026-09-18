@@ -52,7 +52,7 @@ function buildLobbyScreenUI() {
   screen.innerHTML =
     '<div class="lobby-shell">' +
       '<div class="lobby-topline">' +
-        '<div class="lobby-who"><span id="lobbyAvatar" class="lobby-avatar">👷</span><span id="lobbyPlayerName" class="lobby-name"></span></div>' +
+        '<div class="lobby-who"><span id="lobbyAvatar" class="lobby-avatar">👷</span><div><span id="lobbyPlayerName" class="lobby-name"></span><div class="lobby-player-level">Lv.<span id="lobbyPlayerLevel">1</span></div></div></div>' +
         '<button class="lobby-logout-btn" onclick="logoutVoltrush()">ออกจากระบบ</button>' +
       '</div>' +
 
@@ -65,7 +65,7 @@ function buildLobbyScreenUI() {
         '<div class="lobby-hero-content">' +
           '<div class="lobby-hero-title">ศูนย์บัญชาการพลังงาน VoltRush</div>' +
           '<div class="lobby-crystal-pill">💎 <span id="lobbyCrystalVal">0</span> Volt Crystal</div>' +
-          '<div class="lobby-crystal-pill" style="margin-left:8px;">🪙 <span id="lobbyCoinVal">0</span> • Lv.<span id="lobbyPlayerLevel">1</span></div>' +
+          '<div class="lobby-crystal-pill" style="margin-left:8px;">🪙 <span id="lobbyCoinVal">0</span> Coins</div>' +
           '<button class="primary-btn lobby-play-btn" onclick="goToStartScreenFromLobby()">🚀 เริ่มบริหารเมือง</button>' +
         '</div>' +
       '</div>' +
