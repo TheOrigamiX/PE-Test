@@ -1013,6 +1013,7 @@ function freshState() {
 function startGame() {
   TOTAL_TIME = selectedDuration;
   EVENT_FREQ_MULT = EVENT_FREQ_OPTIONS[selectedFreqKey];
+  if (typeof hideVoltrushHubScreens === 'function') hideVoltrushHubScreens();
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('countdownScreen').classList.remove('hidden');

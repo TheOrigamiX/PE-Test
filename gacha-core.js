@@ -429,6 +429,7 @@ function gachaDomainRemaining(type) { return DAILY_CAP_DOMAIN - (gachaEnsureDail
 function gachaStartDomain(type) {
   if (gachaDomainRemaining(type) <= 0) { showToast('วันนี้เล่น ' + DOMAIN_TYPES[type].name + ' ครบโควตาแล้ว พรุ่งนี้มาใหม่'); return; }
   if (typeof selectDuration !== 'function' || typeof startGame !== 'function') { showToast('เริ่มเกมไม่ได้ ลองรีเฟรชหน้า'); return; }
+  if (typeof hideVoltrushHubScreens === 'function') hideVoltrushHubScreens(); /* ปิดหน้าด่าน/ล็อบบี้ก่อนเข้าเกมจริง กันหน้าซ้อนกัน */
   window.currentDomainType = type;
   selectDuration(180); /* โดเมนใช้ความยาวคงที่ 3 นาที */
   startGame();
