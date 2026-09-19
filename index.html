@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="weapon.css">
 <link rel="stylesheet" href="active-skills.css">
 <link rel="stylesheet" href="characterDetail.css">
+<link rel="stylesheet" href="shop.css">
+<link rel="stylesheet" href="domain.css">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -1956,6 +1958,13 @@ function endGame(disasterMessage) {
   if (typeof gachaAwardCrystals === 'function') gachaAwardCrystals(final);
   if (typeof gachaAwardGearDrop === 'function') gachaAwardGearDrop(final);
   if (typeof gachaAwardPartsDrop === 'function') gachaAwardPartsDrop(final);
+  if (typeof gachaAwardPlayerExpFromGame === 'function') gachaAwardPlayerExpFromGame(final);
+  if (window.currentDomainType && typeof gachaAwardDomainReward === 'function') {
+    gachaAwardDomainReward(window.currentDomainType, final);
+    window.currentDomainType = null;
+  } else if (typeof gachaAwardMaterialsFromGame === 'function') {
+    gachaAwardMaterialsFromGame(final);
+  }
 
   document.getElementById('finalScoreVal').textContent = final;
   document.getElementById('bdSatisfaction').textContent = sat;
@@ -2109,6 +2118,8 @@ function restartGame() {
 <script src="active-skills.js"></script>
 <script src="characterDetail.js"></script>
 <script src="gachaBanner.js"></script>
+<script src="shop.js"></script>
+<script src="domain.js"></script>
 <script>
 (function () {
   if (typeof initVoltrushAuthBootstrap === 'function') { initVoltrushAuthBootstrap(); }

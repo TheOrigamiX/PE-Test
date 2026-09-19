@@ -1,0 +1,9 @@
+/* ============================================================
+   VoltRush — Shop page styles
+============================================================ */
+#shopScreen .gacha-page-card { max-width: 760px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.shop-item-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px; text-align: center; }
+.shop-item-name { font-size: 0.74rem; font-weight: 800; color: #e6ecf7; min-height: 34px; }
+.shop-item-price { font-size: 0.9rem; font-weight: 900; color: #ffd166; margin: 6px 0 2px; }
+.shop-item-limit { font-size: 0.62rem; color: #6d8099; margin-bottom: 8px; }

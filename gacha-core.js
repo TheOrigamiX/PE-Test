@@ -259,7 +259,8 @@ function gachaMergeWithDefault(saved) {
     equippedSkins: Object.assign({}, def.equippedSkins, saved.equippedSkins || {}),
     equippedEngineer: (saved.equippedEngineer !== undefined) ? saved.equippedEngineer : def.equippedEngineer,
     loadouts: loadouts,
-    gearInventory: Array.isArray(saved.gearInventory) ? saved.gearInventory : def.gearInventory
+    gearInventory: Array.isArray(saved.gearInventory) ? saved.gearInventory : def.gearInventory,
+    daily: (saved.daily && typeof saved.daily === 'object') ? saved.daily : undefined
   };
 }
 let gacha = gachaDefaultState();
@@ -387,7 +388,102 @@ function gachaAddPlayerExp(amount) {
   if (leveledUp) showToast('🎉 เลเวลผู้เล่นเพิ่มเป็น Lv.' + gacha.playerLevel + '!');
 }
 
-/* ดรอปเหรียญ 🪙 หลังจบเกมตามคะแนน (ใช้เป็นค่าใช้จ่ายร่วมของทุกการอัพเกรด — วัสดุเฉพาะทาง (ตำรา/แกนพลัง/ทูนเนอร์) ยังไม่เปิดดรอป รอออกแบบวิธีได้รับในเฟส 2) */
+/* ---------- เฟส 2: ทางได้มาของวัสดุอัพเกรด (เพดานต่อวัน กันฟาร์มรัว) ---------- */
+function gachaTodayKey() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function gachaEnsureDaily() {
+  const today = gachaTodayKey();
+  if (!gacha.daily || gacha.daily.date !== today) {
+    gacha.daily = { date: today, normalReward: 0, domain: { eng: 0, wpn: 0, core: 0, tuner: 0 }, shop: {} };
+  }
+  gacha.daily.domain = gacha.daily.domain || { eng: 0, wpn: 0, core: 0, tuner: 0 };
+  gacha.daily.shop = gacha.daily.shop || {};
+  return gacha.daily;
+}
+
+/* -- 1) ขยายรางวัลจบเกมปกติ ให้ดรอปวัสดุเล็กน้อยด้วย (จำกัด 5 ครั้ง/วัน) -- */
+const DAILY_CAP_NORMAL_REWARD = 5;
+function gachaAwardMaterialsFromGame(finalScore) {
+  const daily = gachaEnsureDaily();
+  if (daily.normalReward >= DAILY_CAP_NORMAL_REWARD) return;
+  daily.normalReward++;
+  const tomeSize = finalScore >= 400 ? 'M' : 'S';
+  gacha.materials['engExp' + tomeSize] = (gacha.materials['engExp' + tomeSize] || 0) + 1;
+  gacha.materials['wpnExp' + tomeSize] = (gacha.materials['wpnExp' + tomeSize] || 0) + 1;
+  if (Math.random() < 0.25) {
+    const tier = 1 + Math.floor(Math.random() * 2);
+    gacha.materials['engCoreT' + tier] = (gacha.materials['engCoreT' + tier] || 0) + 1;
+  }
+  saveGachaState();
+  showToast('📦 เล่นจบเกม ได้วัสดุอัพเกรดติดมือมาด้วย (' + daily.normalReward + '/' + DAILY_CAP_NORMAL_REWARD + ' วันนี้)');
+}
+
+/* -- 2) โดเมน: ด่านสั้นๆ เฉพาะทาง เล่นแล้วได้วัสดุชนิดที่เลือกแน่นอน (จำกัด 3 ครั้ง/วัน/ด่าน) -- */
+const DAILY_CAP_DOMAIN = 3;
+const DOMAIN_TYPES = {
+  eng: { name: 'ด่านฝึกวิศวกร', icon: '👷', desc: 'ดรอปตำราประสบการณ์วิศวกร' },
+  wpn: { name: 'ด่านซ่อมบำรุงอาวุธ', icon: '🔧', desc: 'ดรอปตำราประสบการณ์อาวุธ' },
+  core: { name: 'ด่านแกนพลัง', icon: '⚛️', desc: 'ดรอปแกนพลังสำหรับตื่นพลัง' },
+  tuner: { name: 'ด่านทูนเนอร์', icon: '🔮', desc: 'ดรอปคริสตัลปรับแต่งของสวมใส่' }
+};
+function gachaDomainRemaining(type) { return DAILY_CAP_DOMAIN - (gachaEnsureDaily().domain[type] || 0); }
+function gachaStartDomain(type) {
+  if (gachaDomainRemaining(type) <= 0) { showToast('วันนี้เล่น ' + DOMAIN_TYPES[type].name + ' ครบโควตาแล้ว พรุ่งนี้มาใหม่'); return; }
+  if (typeof selectDuration !== 'function' || typeof startGame !== 'function') { showToast('เริ่มเกมไม่ได้ ลองรีเฟรชหน้า'); return; }
+  window.currentDomainType = type;
+  selectDuration(180); /* โดเมนใช้ความยาวคงที่ 3 นาที */
+  startGame();
+}
+function gachaAwardDomainReward(type, finalScore) {
+  const daily = gachaEnsureDaily();
+  daily.domain[type] = (daily.domain[type] || 0) + 1;
+  const scoreBonus = finalScore >= 400 ? 1 : 0;
+  if (type === 'eng') { gacha.materials.engExpM = (gacha.materials.engExpM || 0) + 2 + scoreBonus; }
+  else if (type === 'wpn') { gacha.materials.wpnExpM = (gacha.materials.wpnExpM || 0) + 2 + scoreBonus; }
+  else if (type === 'core') {
+    const tier = 1 + Math.floor(Math.random() * (2 + scoreBonus));
+    gacha.materials['engCoreT' + tier] = (gacha.materials['engCoreT' + tier] || 0) + 1;
+    gacha.materials['wpnCoreT' + tier] = (gacha.materials['wpnCoreT' + tier] || 0) + 1;
+  } else if (type === 'tuner') {
+    const tier = 1 + Math.floor(Math.random() * (1 + scoreBonus));
+    gacha.materials['gearTunerT' + tier] = (gacha.materials['gearTunerT' + tier] || 0) + 2;
+  }
+  saveGachaState();
+  showToast('🏆 ผ่าน ' + DOMAIN_TYPES[type].name + '! ได้วัสดุเฉพาะทางแล้ว (' + daily.domain[type] + '/' + DAILY_CAP_DOMAIN + ' วันนี้)');
+}
+
+/* -- 3) ร้านค้า: แลกเหรียญ/เพชรเป็นวัสดุตรงๆ (เสริม จำกัดจำนวนซื้อ/วัน ต่อชนิด) -- */
+const SHOP_ITEMS = [
+  { key: 'engExpS', name: 'ตำราประสบการณ์วิศวกร (เล็ก)', price: 30, currency: 'coins', dailyLimit: 10 },
+  { key: 'wpnExpS', name: 'ตำราประสบการณ์อาวุธ (เล็ก)', price: 30, currency: 'coins', dailyLimit: 10 },
+  { key: 'engExpM', name: 'ตำราประสบการณ์วิศวกร (กลาง)', price: 100, currency: 'coins', dailyLimit: 5 },
+  { key: 'wpnExpM', name: 'ตำราประสบการณ์อาวุธ (กลาง)', price: 100, currency: 'coins', dailyLimit: 5 },
+  { key: 'gearTunerT1', name: 'คริสตัลปรับแต่ง ระดับ 1', price: 60, currency: 'coins', dailyLimit: 5 },
+  { key: 'gearTunerT2', name: 'คริสตัลปรับแต่ง ระดับ 2', price: 40, currency: 'crystals', dailyLimit: 3 },
+  { key: 'engCoreT1', name: 'แกนพลังวิศวกร ระดับ 1', price: 25, currency: 'crystals', dailyLimit: 3 },
+  { key: 'wpnCoreT1', name: 'แกนพลังอาวุธ ระดับ 1', price: 25, currency: 'crystals', dailyLimit: 3 }
+];
+function gachaShopBought(key) { return gachaEnsureDaily().shop[key] || 0; }
+function gachaBuyMaterial(key) {
+  const item = SHOP_ITEMS.find(i => i.key === key);
+  if (!item) return;
+  const daily = gachaEnsureDaily();
+  const bought = daily.shop[key] || 0;
+  if (bought >= item.dailyLimit) { showToast('วันนี้ซื้อ ' + item.name + ' ครบโควตาแล้ว'); return; }
+  if (gacha[item.currency] < item.price) { showToast((item.currency === 'coins' ? '🪙' : '💎') + ' ไม่พอ ต้องการ ' + item.price); return; }
+  gacha[item.currency] -= item.price;
+  gacha.materials[key] = (gacha.materials[key] || 0) + 1;
+  daily.shop[key] = bought + 1;
+  saveGachaState();
+  if (typeof sndBuy === 'function') sndBuy();
+  showToast('🛒 ซื้อ ' + item.name + ' แล้ว! (' + daily.shop[key] + '/' + item.dailyLimit + ' วันนี้)');
+}
+
+/* -- 4) EXP ผู้เล่น: ได้ทุกครั้งที่จบเกม ตามคะแนน ไม่จำกัดจำนวนครั้ง -- */
+function gachaAwardPlayerExpFromGame(finalScore) {
+  const amt = Math.max(5, Math.floor(finalScore / 20));
+  gachaAddPlayerExp(amt);
+}
+/* ดรอปเหรียญ 🪙 หลังจบเกมตามคะแนน (ใช้เป็นค่าใช้จ่ายร่วมของทุกการอัพเกรด) */
 function gachaAwardPartsDrop(finalScore) {
   const amt = Math.max(10, Math.floor(finalScore / 10) + Math.floor(Math.random() * 15));
   gacha.coins += amt;

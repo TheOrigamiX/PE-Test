@@ -1,0 +1,10 @@
+/* ============================================================
+   VoltRush — Domain challenge screen styles
+============================================================ */
+#domainScreen .gacha-page-card { max-width: 760px; }
+.domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.domain-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px; text-align: center; }
+.domain-card-icon { font-size: 1.6rem; margin-bottom: 4px; }
+.domain-card-name { font-size: 0.76rem; font-weight: 800; color: #e6ecf7; }
+.domain-card-desc { font-size: 0.64rem; color: #9fb3d1; margin: 4px 0; min-height: 30px; }
+.domain-card-remaining { font-size: 0.62rem; color: #6d8099; margin-bottom: 8px; }

@@ -75,6 +75,14 @@ function buildLobbyScreenUI() {
           '<div class="lobby-nav-icon">🎰</div><div class="lobby-nav-title">ตู้กาชา</div>' +
           '<div class="lobby-nav-sub">สุ่มของ/วิศวกร/อาวุธ</div>' +
         '</button>' +
+        '<button class="lobby-nav-card" onclick="showShopScreen()">' +
+          '<div class="lobby-nav-icon">🛒</div><div class="lobby-nav-title">ร้านค้า</div>' +
+          '<div class="lobby-nav-sub">แลกวัสดุอัพเกรด</div>' +
+        '</button>' +
+        '<button class="lobby-nav-card" onclick="showDomainScreen()">' +
+          '<div class="lobby-nav-icon">🌀</div><div class="lobby-nav-title">ด่านท้าทาย</div>' +
+          '<div class="lobby-nav-sub">ฟาร์มวัสดุเฉพาะทาง</div>' +
+        '</button>' +
         '<button class="lobby-nav-card" onclick="showSkinScreen()">' +
           '<div class="lobby-nav-icon">🎨</div><div class="lobby-nav-title">สกิน</div>' +
           '<div class="lobby-nav-sub" id="lobbySkinCount">0/0 ชิ้น</div>' +
