@@ -290,6 +290,11 @@
   .breakdown div:last-child { border-bottom: none; font-weight: 800; color: #ffd166; }
   .save-row { display: flex; gap: 10px; margin-bottom: 14px; }
   .save-row input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #e6ecf7; font-size: 0.88rem; }
+  .end-rewards-box { background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.25); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+  .end-rewards-title { font-size: 0.85rem; font-weight: 800; color: #ffd166; margin-bottom: 8px; }
+  .end-rewards-list { display: flex; flex-direction: column; gap: 5px; }
+  .end-reward-line { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #e6ecf7; }
+  .end-reward-icon { font-size: 1rem; }
   .leaderboard { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; }
   .leaderboard h3 { margin-top: 0; font-size: 0.84rem; color: #ffd166; }
   .leaderboard ol { margin: 0; padding-left: 20px; max-height: 46vh; overflow-y: auto; }
@@ -510,6 +515,10 @@
       <div><span>🌫️ หักค่าคาร์บอน</span><span id="bdCarbon">-0</span></div>
       <div><span>⚠️ หักจากไฟดับ (<span id="bdBlackoutCount">0</span> ครั้ง)</span><span id="bdBlackout">-0</span></div>
       <div><span>คะแนนสุทธิ</span><span id="bdFinal">0</span></div>
+    </div>
+    <div class="end-rewards-box hidden" id="endRewardsBox">
+      <div class="end-rewards-title">🎁 ได้รับหลังจบเกม</div>
+      <div class="end-rewards-list" id="endRewardsList"></div>
     </div>
     <div class="save-row">
       <input type="text" id="nameInput" placeholder="ใส่ชื่อของคุณ..." maxlength="16">
@@ -1955,6 +1964,7 @@ function endGame(disasterMessage) {
   const carbon = Math.round(bd.carbonPenalty);
   const blackout = Math.round(bd.blackoutPenalty);
   const final = currentScore();
+  const rewardsSnapshot = (typeof captureGachaSnapshot === 'function') ? captureGachaSnapshot() : null;
   if (typeof gachaAwardCrystals === 'function') gachaAwardCrystals(final);
   if (typeof gachaAwardGearDrop === 'function') gachaAwardGearDrop(final);
   if (typeof gachaAwardPartsDrop === 'function') gachaAwardPartsDrop(final);
@@ -1965,6 +1975,7 @@ function endGame(disasterMessage) {
   } else if (typeof gachaAwardMaterialsFromGame === 'function') {
     gachaAwardMaterialsFromGame(final);
   }
+  if (typeof renderEndRewards === 'function') renderEndRewards(rewardsSnapshot);
 
   document.getElementById('finalScoreVal').textContent = final;
   document.getElementById('bdSatisfaction').textContent = sat;
@@ -2120,6 +2131,7 @@ function restartGame() {
 <script src="gachaBanner.js"></script>
 <script src="shop.js"></script>
 <script src="domain.js"></script>
+<script src="end-rewards.js"></script>
 <script>
 (function () {
   if (typeof initVoltrushAuthBootstrap === 'function') { initVoltrushAuthBootstrap(); }
