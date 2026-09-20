@@ -1,0 +1,42 @@
+/* ============================================================
+   VoltRush — Siege mode styles
+============================================================ */
+.siege-card { max-width: 720px; }
+
+.siege-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.siege-wave-badge { font-weight: 900; color: #ffd166; font-size: 1rem; }
+.siege-coin-badge { font-weight: 800; color: #ffd166; }
+.siege-hp-bar-wrap { flex: 1; min-width: 140px; }
+.siege-hp-label { font-size: 0.62rem; color: #9fb3d1; margin-bottom: 2px; }
+.siege-hp-bar { height: 12px; border-radius: 8px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.siege-hp-fill { height: 100%; background: linear-gradient(90deg, #6ee7a8, #38b6ff); transition: width 0.4s ease; }
+.siege-hp-bar.monster { height: 10px; margin: 6px 0; }
+.siege-hp-fill.monster { background: linear-gradient(90deg, #ff6b6b, #ff9f4a); }
+
+.siege-monster-card {
+  text-align: center; padding: 18px; border-radius: 18px; margin-bottom: 14px;
+  background: radial-gradient(circle at 50% 20%, rgba(255,107,107,0.12), transparent 70%), rgba(255,255,255,0.03);
+  border: 2px solid rgba(255,107,107,0.3);
+}
+.siege-monster-card.mini { border-color: rgba(255,209,102,0.5); }
+.siege-monster-card.boss { border-color: rgba(179,136,255,0.6); box-shadow: 0 0 24px rgba(179,136,255,0.25); }
+.siege-monster-icon { font-size: 4rem; filter: drop-shadow(0 0 16px rgba(255,107,107,0.5)); }
+.siege-monster-name { font-weight: 900; color: #e6ecf7; margin: 6px 0 4px; }
+.siege-monster-sub { font-size: 0.7rem; color: #9fb3d1; }
+.siege-atk-timer { font-size: 0.76rem; color: #ffd166; font-weight: 800; margin-top: 6px; }
+
+.siege-supply-row { text-align: center; font-size: 0.9rem; font-weight: 800; margin-bottom: 10px; }
+.siege-supply-row .ok { color: #6ee7a8; }
+.siege-supply-row .bad { color: #ff6b6b; }
+
+.siege-plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.siege-plant-btn { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 8px 4px; cursor: pointer; color: #e6ecf7; font-size: 1.3rem; text-align: center; }
+.siege-plant-btn.on { border-color: #6ee7a8; background: rgba(110,231,168,0.1); }
+.siege-plant-name { font-size: 0.62rem; font-weight: 700; margin-top: 2px; }
+.siege-plant-sub { font-size: 0.58rem; color: #9fb3d1; margin-top: 2px; }
+
+.siege-skill-row { display: flex; gap: 10px; justify-content: center; }
+
+.siege-gameover-title { text-align: center; font-size: 1.4rem; font-weight: 900; color: #ff6b6b; margin-bottom: 6px; }
+.siege-gameover-wave { text-align: center; font-size: 1rem; color: #ffd166; font-weight: 800; margin-bottom: 14px; }
+#siegeGameOver .primary-btn, #siegeGameOver .secondary-btn { display: block; width: 100%; margin-bottom: 10px; }

@@ -83,6 +83,10 @@ function buildLobbyScreenUI() {
           '<div class="lobby-nav-icon">🌀</div><div class="lobby-nav-title">ด่านท้าทาย</div>' +
           '<div class="lobby-nav-sub">ฟาร์มวัสดุเฉพาะทาง</div>' +
         '</button>' +
+        '<button class="lobby-nav-card" onclick="showSiegeScreen()">' +
+          '<div class="lobby-nav-icon">🐲</div><div class="lobby-nav-title">โหมดบุกเมือง</div>' +
+          '<div class="lobby-nav-sub">เอาชนะมอนสเตอร์ไม่จำกัด</div>' +
+        '</button>' +
         '<button class="lobby-nav-card" onclick="showSkinScreen()">' +
           '<div class="lobby-nav-icon">🎨</div><div class="lobby-nav-title">สกิน</div>' +
           '<div class="lobby-nav-sub" id="lobbySkinCount">0/0 ชิ้น</div>' +
