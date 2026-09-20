@@ -1,18 +1,27 @@
 /* ============================================================
-   VoltRush — โหมดบุกเมือง (Siege Mode): โหมดใหม่แยกจากคลาสสิกเดิม
-   เล่นไปเรื่อยๆ ยากขึ้นทุก wave จนกว่าเมืองจะพัง (endless)
-   มอนสเตอร์/มินิบอส/บอส(คน) มีหลอดเลือด+ไอคอนใหญ่ของตัวเอง
-   ไม่แตะ state/ฟังก์ชันของโหมดคลาสสิกเลย — จำลองเศรษฐกิจแยกเป็นของตัวเอง
+   VoltRush — โหมดบุกเมือง (Siege Mode)
+   ระบบใหม่: สุ่มโรงงานลงตาราง merge (แตะเลือก-แตะเป้าหมายเพื่อรวม/ย้าย
+   แทนการลากเมาส์จริง เพื่อให้กดได้ทั้งจอสัมผัส/เมาส์เหมือนกัน)
+   เจอของซ้ำชนิด+เลเวลเดียวกัน → รวมเป็นเลเวลถัดไป (เพดาน Lv.10)
+   Wave ปกติสุ่มมอนหลายตัวพร้อมกัน ต้องเคลียร์หมดถึงขึ้น wave ถัดไป
+   มินิบอส/บอส (ทุก wave ที่ 5/10) เป็นตัวเดี่ยวแต่แรงกว่ามาก
+   ไม่แตะ state/ฟังก์ชันของโหมดคลาสสิกเลย
 ============================================================ */
 
+const SIEGE_GRID_SIZE = 16; /* ตาราง 4x4 */
+const SIEGE_MAX_TILE_LEVEL = 10;
+const SIEGE_ROLL_COST = 30;
 const SIEGE_PLANTS = [
-  { key: 'coal', icon: '🏭', name: 'ถ่านหิน', cost: 0, output: 12 },
-  { key: 'solar', icon: '☀️', name: 'โซลาร์เซลล์', cost: 40, output: 10 },
-  { key: 'wind', icon: '💨', name: 'กังหันลม', cost: 60, output: 12 },
-  { key: 'hydro', icon: '🌊', name: 'พลังน้ำ', cost: 100, output: 16 },
-  { key: 'geothermal', icon: '🌋', name: 'ความร้อนใต้พิภพ', cost: 140, output: 18 },
-  { key: 'nuclear', icon: '☢️', name: 'นิวเคลียร์', cost: 220, output: 30 }
+  { key: 'coal', icon: '🏭', name: 'ถ่านหิน', output: 6, rarity: 'common' },
+  { key: 'solar', icon: '☀️', name: 'โซลาร์เซลล์', output: 7, rarity: 'common' },
+  { key: 'wind', icon: '💨', name: 'กังหันลม', output: 9, rarity: 'rare' },
+  { key: 'hydro', icon: '🌊', name: 'พลังน้ำ', output: 11, rarity: 'rare' },
+  { key: 'geothermal', icon: '🌋', name: 'ความร้อนใต้พิภพ', output: 15, rarity: 'epic' },
+  { key: 'nuclear', icon: '☢️', name: 'นิวเคลียร์', output: 22, rarity: 'legendary' }
 ];
+const SIEGE_RARITY_BASE_WEIGHTS = { common: 60, rare: 25, epic: 12, legendary: 3 };
+const SIEGE_RARITY_COLORS = { common: '#9fb3d1', rare: '#38b6ff', epic: '#b388ff', legendary: '#ffd166' };
+
 const SIEGE_MONSTERS = [
   { icon: '👻', name: 'ปีศาจดูดไฟ', baseHp: 40, baseDmg: 8, atkInterval: 6 },
   { icon: '🦴', name: 'โครงกระดูกช็อต', baseHp: 55, baseDmg: 10, atkInterval: 5 },
@@ -20,65 +29,128 @@ const SIEGE_MONSTERS = [
   { icon: '🕷️', name: 'แมงมุมไฟฟ้าสถิต', baseHp: 65, baseDmg: 12, atkInterval: 5 }
 ];
 const SIEGE_MINIBOSSES = [
-  { icon: '👹', name: 'ยักษ์ไฟดับ', baseHp: 180, baseDmg: 20, atkInterval: 7, kind: 'mini' },
-  { icon: '🐉', name: 'มังกรโอเวอร์โหลด', baseHp: 220, baseDmg: 24, atkInterval: 6, kind: 'mini' }
+  { icon: '👹', name: 'ยักษ์ไฟดับ', baseHp: 220, baseDmg: 20, atkInterval: 7, kind: 'mini' },
+  { icon: '🐉', name: 'มังกรโอเวอร์โหลด', baseHp: 260, baseDmg: 24, atkInterval: 6, kind: 'mini' }
 ];
 const SIEGE_BOSSES = [
-  { icon: '🧑‍💼', name: 'ผู้บริหารทรยศ', baseHp: 400, baseDmg: 30, atkInterval: 8, kind: 'boss', phases: 2 },
-  { icon: '🕵️', name: 'สายลับบริษัทคู่แข่ง', baseHp: 450, baseDmg: 34, atkInterval: 7, kind: 'boss', phases: 2 }
+  { icon: '🧑‍💼', name: 'ผู้บริหารทรยศ', baseHp: 450, baseDmg: 30, atkInterval: 8, kind: 'boss', phases: 2 },
+  { icon: '🕵️', name: 'สายลับบริษัทคู่แข่ง', baseHp: 500, baseDmg: 34, atkInterval: 7, kind: 'boss', phases: 2 }
 ];
 
 let siege = null;
 let siegeIntervalId = null;
 
-function siegeMonsterForWave(wave) {
-  let pool = SIEGE_MONSTERS, kind = null;
-  if (wave % 10 === 0) { pool = SIEGE_BOSSES; kind = 'boss'; }
-  else if (wave % 5 === 0) { pool = SIEGE_MINIBOSSES; kind = 'mini'; }
-  const base = pool[Math.floor(Math.random() * pool.length)];
-  const scale = 1 + (wave - 1) * 0.12;
+function siegePlantDef(key) { return SIEGE_PLANTS.find(p => p.key === key); }
+
+/* ---------- สุ่ม+รวมโรงงาน ---------- */
+function siegeRollWeights() {
+  const bonus = Math.min(45, siege.totalMerges * 2.5);
+  return {
+    common: Math.max(10, SIEGE_RARITY_BASE_WEIGHTS.common - bonus * 0.7),
+    rare: SIEGE_RARITY_BASE_WEIGHTS.rare,
+    epic: SIEGE_RARITY_BASE_WEIGHTS.epic + bonus * 0.35,
+    legendary: SIEGE_RARITY_BASE_WEIGHTS.legendary + bonus * 0.35
+  };
+}
+function siegeRollPlantKey() {
+  const weights = siegeRollWeights();
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  const order = ['legendary', 'epic', 'rare', 'common'];
+  for (let i = 0; i < order.length; i++) {
+    const rarity = order[i];
+    if (r < weights[rarity]) {
+      const options = SIEGE_PLANTS.filter(p => p.rarity === rarity);
+      return options[Math.floor(Math.random() * options.length)].key;
+    }
+    r -= weights[rarity];
+  }
+  return 'coal';
+}
+function siegeRollTile() {
+  const emptyIdx = siege.grid.findIndex(c => c === null);
+  if (emptyIdx === -1) { showToast('ช่องเต็ม! รวมโรงงานให้มีที่ว่างก่อนถึงจะสุ่มต่อได้'); return; }
+  if (siege.coins < SIEGE_ROLL_COST) { showToast('เหรียญไม่พอ ต้องการ 🪙' + SIEGE_ROLL_COST); return; }
+  siege.coins -= SIEGE_ROLL_COST;
+  siege.grid[emptyIdx] = { key: siegeRollPlantKey(), level: 1 };
+  renderSiegeScreen();
+}
+/* แตะเลือกช่อง แล้วแตะช่องเป้าหมาย: ว่าง=ย้าย, ตรงกัน(ชนิด+เลเวลเดียวกัน)=รวม, ไม่ตรงกัน=สลับที่ */
+function siegeTapCell(idx) {
+  if (siege.selectedCell === null) {
+    if (siege.grid[idx]) siege.selectedCell = idx;
+    renderSiegeScreen();
+    return;
+  }
+  if (siege.selectedCell === idx) { siege.selectedCell = null; renderSiegeScreen(); return; }
+  const a = siege.grid[siege.selectedCell], b = siege.grid[idx];
+  if (!a) { siege.selectedCell = null; renderSiegeScreen(); return; }
+  if (!b) {
+    siege.grid[idx] = a; siege.grid[siege.selectedCell] = null;
+  } else if (a.key === b.key && a.level === b.level && a.level < SIEGE_MAX_TILE_LEVEL) {
+    siege.grid[idx] = { key: a.key, level: a.level + 1 };
+    siege.grid[siege.selectedCell] = null;
+    siege.totalMerges++;
+    showToast('🔗 รวมสำเร็จ! ' + siegePlantDef(a.key).name + ' Lv.' + (a.level + 1));
+  } else {
+    siege.grid[idx] = a; siege.grid[siege.selectedCell] = b;
+  }
+  siege.selectedCell = null;
+  renderSiegeScreen();
+}
+
+function siegeSupply() {
+  let s = 0;
+  siege.grid.forEach(cell => { if (cell) s += siegePlantDef(cell.key).output * cell.level; });
+  const mult = siege.activeSkillEffects.reduce((m, e) => m * e.supplyMult, 1);
+  return Math.round(s * mult);
+}
+function siegeDemand() {
+  const aliveCount = siege.monsters.filter(m => m.hp > 0).length || 1;
+  const base = (18 + siege.wave * 3) * Math.pow(aliveCount, 0.6);
+  const mult = siege.activeSkillEffects.reduce((m, e) => m * e.demandMult, 1);
+  return Math.round(base * mult);
+}
+
+/* ---------- มอนสเตอร์: หลายตัวต่อ wave ปกติ, มินิบอส/บอสเดี่ยวแต่แรงกว่ามาก ---------- */
+function siegeScaledMonster(base, wave, extraScale) {
+  const scale = (1 + (wave - 1) * 0.12) * (extraScale || 1);
   const interval = Math.max(2.5, base.atkInterval - Math.floor(wave / 8) * 0.3);
   return {
     name: base.name, icon: base.icon,
     hpMax: Math.round(base.baseHp * scale), hp: Math.round(base.baseHp * scale),
     dmg: Math.round(base.baseDmg * scale),
     atkInterval: interval, atkTimer: interval,
-    kind: kind, phase: 1, phases: base.phases || 1
+    kind: base.kind || null, phase: 1, phases: base.phases || 1
   };
+}
+function siegeMonstersForWave(wave) {
+  if (wave % 10 === 0) {
+    const base = SIEGE_BOSSES[Math.floor(Math.random() * SIEGE_BOSSES.length)];
+    return [siegeScaledMonster(base, wave)];
+  }
+  if (wave % 5 === 0) {
+    const base = SIEGE_MINIBOSSES[Math.floor(Math.random() * SIEGE_MINIBOSSES.length)];
+    return [siegeScaledMonster(base, wave)];
+  }
+  const count = Math.min(4, 1 + Math.floor((wave - 1) / 3));
+  const list = [];
+  for (let i = 0; i < count; i++) {
+    const base = SIEGE_MONSTERS[Math.floor(Math.random() * SIEGE_MONSTERS.length)];
+    list.push(siegeScaledMonster(base, wave, 0.85)); /* หลายตัวพร้อมกัน เลยลดสเกลตัวละนิดกันโหดเกิน */
+  }
+  return list;
 }
 
 function siegeNewState() {
-  const owned = { coal: true };
-  const on = { coal: true };
   return {
-    wave: 1, cityHp: 100, cityHpMax: 100, coins: 100,
-    owned: owned, on: on,
-    monster: siegeMonsterForWave(1),
+    wave: 1, cityHp: 100, cityHpMax: 100, coins: 150,
+    grid: new Array(SIEGE_GRID_SIZE).fill(null),
+    selectedCell: null, totalMerges: 0,
+    monsters: siegeMonstersForWave(1),
     activeSkillEffects: [], skillCooldowns: { engineer: 0, weapon: 0 },
     running: true
   };
-}
-
-function siegeSupply() {
-  let s = 0;
-  SIEGE_PLANTS.forEach(p => { if (siege.owned[p.key] && siege.on[p.key]) s += p.output; });
-  const mult = siege.activeSkillEffects.reduce((m, e) => m * e.supplyMult, 1);
-  return Math.round(s * mult);
-}
-function siegeDemand() {
-  const base = 18 + siege.wave * 3;
-  const mult = siege.activeSkillEffects.reduce((m, e) => m * e.demandMult, 1);
-  return Math.round(base * mult);
-}
-
-function siegeBuyPlant(key) {
-  if (siege.owned[key]) { siege.on[key] = !siege.on[key]; renderSiegeScreen(); return; }
-  const def = SIEGE_PLANTS.find(p => p.key === key);
-  if (siege.coins < def.cost) { showToast('เหรียญไม่พอ ต้องการ 🪙' + def.cost); return; }
-  siege.coins -= def.cost;
-  siege.owned[key] = true;
-  siege.on[key] = true;
-  renderSiegeScreen();
 }
 
 /* ---------- สกิลกดใช้ระหว่างบุกเมือง (แยกจาก active-skills.js ของโหมดคลาสสิกโดยสิ้นเชิง) ---------- */
@@ -99,32 +171,37 @@ function siegeTick() {
   siege.activeSkillEffects = siege.activeSkillEffects.filter(e => { e.timeLeft--; return e.timeLeft > 0; });
   ['engineer', 'weapon'].forEach(w => { if (siege.skillCooldowns[w] > 0) siege.skillCooldowns[w]--; });
 
-  siege.monster.atkTimer -= 1;
-  if (siege.monster.atkTimer <= 0) {
-    const supply = siegeSupply(), demand = siegeDemand();
-    if (supply >= demand) {
-      const dmg = Math.max(3, supply - demand);
-      siege.monster.hp -= dmg;
-      showToast('⚔️ โต้กลับ! ' + siege.monster.name + ' โดน ' + dmg + ' ดาเมจ');
-    } else {
-      siege.cityHp -= siege.monster.dmg;
-      showToast('💥 ' + siege.monster.name + ' โจมตีเมือง! -' + siege.monster.dmg + ' HP');
+  const supply = siegeSupply(), demand = siegeDemand();
+  siege.monsters.forEach(m => {
+    if (m.hp <= 0) return;
+    m.atkTimer -= 1;
+    if (m.atkTimer <= 0) {
+      if (supply >= demand) {
+        const dmg = Math.max(3, supply - demand);
+        m.hp -= dmg;
+        showToast('⚔️ โต้กลับ! ' + m.name + ' โดน ' + dmg + ' ดาเมจ');
+      } else {
+        siege.cityHp -= m.dmg;
+        showToast('💥 ' + m.name + ' โจมตีเมือง! -' + m.dmg + ' HP');
+      }
+      m.atkTimer = m.atkInterval;
     }
-    siege.monster.atkTimer = siege.monster.atkInterval;
-  }
+  });
 
-  if (siege.monster.hp <= 0) {
-    if (siege.monster.phase < siege.monster.phases) {
-      siege.monster.phase++;
-      siege.monster.hp = siege.monster.hpMax;
-      siege.monster.dmg = Math.round(siege.monster.dmg * 1.3);
-      showToast('🔥 เข้าเฟส ' + siege.monster.phase + ' ของ ' + siege.monster.name + '!');
-    } else {
-      siege.coins += 30 + siege.wave * 5;
-      siege.wave++;
-      siege.monster = siegeMonsterForWave(siege.wave);
-      showToast('✅ ชนะ! เข้าสู่ Wave ' + siege.wave);
+  siege.monsters.forEach(m => {
+    if (m.hp <= 0 && m.phase < m.phases) {
+      m.phase++;
+      m.hp = m.hpMax;
+      m.dmg = Math.round(m.dmg * 1.3);
+      showToast('🔥 เข้าเฟส ' + m.phase + ' ของ ' + m.name + '!');
     }
+  });
+
+  if (siege.monsters.every(m => m.hp <= 0)) {
+    siege.coins += 30 + siege.wave * 5;
+    siege.wave++;
+    siege.monsters = siegeMonstersForWave(siege.wave);
+    showToast('✅ เคลียร์ wave สำเร็จ! เข้าสู่ Wave ' + siege.wave);
   }
 
   if (siege.cityHp <= 0) { siege.cityHp = 0; siege.running = false; siegeGameOver(); }
@@ -146,10 +223,9 @@ function siegeGameOver() {
   over.classList.remove('hidden');
   document.getElementById('siegeWaveReached').textContent = siege.wave;
   if (typeof renderEndRewards === 'function') {
+    renderEndRewards(snapshot);
     const box = document.getElementById('endRewardsBox');
     const list = document.getElementById('siegeRewardsList');
-    /* ใช้กล่องสรุปแบบเดียวกับโหมดคลาสสิก แต่ inject ผลลงช่องของ siege เอง */
-    renderEndRewards(snapshot);
     if (box && list && !box.classList.contains('hidden')) {
       list.innerHTML = document.getElementById('endRewardsList').innerHTML;
       box.classList.add('hidden');
@@ -186,7 +262,7 @@ function buildSiegeScreenUI() {
     '</div>' +
 
     '<div id="siegeIntro">' +
-      '<p class="gacha-hint">เล่นไปเรื่อยๆ ยากขึ้นทุก Wave — ผลิตไฟให้พอ (หรือเกิน) ความต้องการตอนมอนสเตอร์โจมตี เพื่อโต้กลับใส่มัน ถ้าเมือง HP หมด = จบเกม ทุก Wave ที่ 5 เจอมินิบอส ทุก Wave ที่ 10 เจอบอส (คน) หลายเฟส</p>' +
+      '<p class="gacha-hint">สุ่มโรงงานลงตาราง แตะ 2 ชิ้นที่ชนิด+เลเวลตรงกันเพื่อรวมเป็นเลเวลสูงขึ้น (สูงสุด Lv.' + SIEGE_MAX_TILE_LEVEL + ') ผลิตไฟให้พอตอนมอนสเตอร์จะโจมตีเพื่อโต้กลับ เมือง HP หมด = จบเกม ทุก Wave ที่ 5/10 เจอมินิบอส/บอส(คน) ตัวเดียวแต่แรงกว่ามาก</p>' +
       '<button class="primary-btn" onclick="siegeStart()">🚀 เริ่มบุกเมือง</button>' +
     '</div>' +
 
@@ -197,17 +273,13 @@ function buildSiegeScreenUI() {
         '<div class="siege-coin-badge">🪙 <span id="siegeCoinVal">0</span></div>' +
       '</div>' +
 
-      '<div class="siege-monster-card" id="siegeMonsterCard">' +
-        '<div class="siege-monster-icon" id="siegeMonsterIcon">👻</div>' +
-        '<div class="siege-monster-name" id="siegeMonsterName"></div>' +
-        '<div class="siege-hp-bar monster"><div class="siege-hp-fill monster" id="siegeMonsterHpFill"></div></div>' +
-        '<div class="siege-monster-sub" id="siegeMonsterSub"></div>' +
-        '<div class="siege-atk-timer" id="siegeAtkTimer"></div>' +
-      '</div>' +
-
+      '<div class="siege-monsters-row" id="siegeMonstersRow"></div>' +
       '<div class="siege-supply-row" id="siegeSupplyRow"></div>' +
 
-      '<div class="siege-plant-grid" id="siegePlantGrid"></div>' +
+      '<div class="siege-grid-section">' +
+        '<div class="siege-grid" id="siegeGrid"></div>' +
+        '<button class="primary-btn siege-roll-btn" onclick="siegeRollTile()">🎲 สุ่มโรงงาน (🪙' + SIEGE_ROLL_COST + ')</button>' +
+      '</div>' +
 
       '<div class="siege-skill-row">' +
         '<button class="char-action-btn" id="siegeSkillEngBtn" onclick="siegeActivateSkill(\'engineer\')">👷 สกิลวิศวกร</button>' +
@@ -226,30 +298,38 @@ function buildSiegeScreenUI() {
   document.body.appendChild(screen);
 }
 
+function siegeMonsterCardHtml(m) {
+  const kindClass = m.kind ? ' ' + m.kind : '';
+  const nameSuffix = m.kind === 'boss' ? ' (บอส เฟส ' + m.phase + '/' + m.phases + ')' : m.kind === 'mini' ? ' (มินิบอส)' : '';
+  const dead = m.hp <= 0;
+  return '<div class="siege-monster-card' + kindClass + (dead ? ' dead' : '') + '">' +
+    '<div class="siege-monster-icon">' + m.icon + '</div>' +
+    '<div class="siege-monster-name">' + m.name + nameSuffix + '</div>' +
+    '<div class="siege-hp-bar monster"><div class="siege-hp-fill monster" style="width:' + Math.max(0, (m.hp / m.hpMax) * 100) + '%"></div></div>' +
+    '<div class="siege-monster-sub">HP ' + Math.max(0, m.hp) + ' / ' + m.hpMax + '</div>' +
+    (dead ? '<div class="siege-atk-timer">💀 พ่ายแพ้แล้ว</div>' : '<div class="siege-atk-timer">⏱ โจมตีในอีก ' + Math.max(0, Math.ceil(m.atkTimer)) + ' วิ (ดาเมจ ' + m.dmg + ')</div>') +
+    '</div>';
+}
+
 function renderSiegeScreen() {
   if (!siege) return;
   document.getElementById('siegeWaveVal').textContent = siege.wave;
   document.getElementById('siegeCoinVal').textContent = siege.coins;
   document.getElementById('siegeCityHpFill').style.width = Math.max(0, (siege.cityHp / siege.cityHpMax) * 100) + '%';
 
-  const m = siege.monster;
-  document.getElementById('siegeMonsterIcon').textContent = m.icon;
-  document.getElementById('siegeMonsterName').textContent = m.name + (m.kind === 'boss' ? ' (บอส เฟส ' + m.phase + '/' + m.phases + ')' : m.kind === 'mini' ? ' (มินิบอส)' : '');
-  document.getElementById('siegeMonsterHpFill').style.width = Math.max(0, (m.hp / m.hpMax) * 100) + '%';
-  document.getElementById('siegeMonsterSub').textContent = 'HP ' + Math.max(0, m.hp) + ' / ' + m.hpMax;
-  document.getElementById('siegeAtkTimer').textContent = '⏱ โจมตีในอีก ' + Math.max(0, Math.ceil(m.atkTimer)) + ' วิ (ดาเมจ ' + m.dmg + ')';
-  document.getElementById('siegeMonsterCard').className = 'siege-monster-card' + (m.kind ? ' ' + m.kind : '');
+  document.getElementById('siegeMonstersRow').innerHTML = siege.monsters.map(siegeMonsterCardHtml).join('');
 
   const supply = siegeSupply(), demand = siegeDemand();
   document.getElementById('siegeSupplyRow').innerHTML =
     '<span class="' + (supply >= demand ? 'ok' : 'bad') + '">⚡ ผลิต ' + supply + '</span> / <span>ต้องการ ' + demand + '</span>';
 
-  document.getElementById('siegePlantGrid').innerHTML = SIEGE_PLANTS.map(p => {
-    const owned = !!siege.owned[p.key];
-    const on = owned && siege.on[p.key];
-    return '<button class="siege-plant-btn ' + (on ? 'on' : '') + '" onclick="siegeBuyPlant(\'' + p.key + '\')">' +
-      '<div>' + p.icon + '</div><div class="siege-plant-name">' + p.name + '</div>' +
-      '<div class="siege-plant-sub">' + (owned ? ('+' + p.output + ' • ' + (on ? 'เปิดอยู่' : 'ปิดอยู่')) : ('🪙' + p.cost)) + '</div>' +
+  document.getElementById('siegeGrid').innerHTML = siege.grid.map((cell, idx) => {
+    const selected = siege.selectedCell === idx;
+    if (!cell) return '<button class="siege-cell empty ' + (selected ? 'selected' : '') + '" onclick="siegeTapCell(' + idx + ')"></button>';
+    const def = siegePlantDef(cell.key);
+    const color = SIEGE_RARITY_COLORS[def.rarity];
+    return '<button class="siege-cell ' + (selected ? 'selected' : '') + '" style="--rarity-color:' + color + '" onclick="siegeTapCell(' + idx + ')">' +
+      '<div class="siege-cell-icon">' + def.icon + '</div><div class="siege-cell-lv">Lv.' + cell.level + '</div>' +
       '</button>';
   }).join('');
 

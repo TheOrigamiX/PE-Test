@@ -1,5 +1,5 @@
 /* ============================================================
-   VoltRush — Siege mode styles
+   VoltRush — Siege mode styles (merge grid + multi-monster waves)
 ============================================================ */
 .siege-card { max-width: 720px; }
 
@@ -10,30 +10,40 @@
 .siege-hp-label { font-size: 0.62rem; color: #9fb3d1; margin-bottom: 2px; }
 .siege-hp-bar { height: 12px; border-radius: 8px; background: rgba(255,255,255,0.08); overflow: hidden; }
 .siege-hp-fill { height: 100%; background: linear-gradient(90deg, #6ee7a8, #38b6ff); transition: width 0.4s ease; }
-.siege-hp-bar.monster { height: 10px; margin: 6px 0; }
+.siege-hp-bar.monster { height: 8px; margin: 5px 0; }
 .siege-hp-fill.monster { background: linear-gradient(90deg, #ff6b6b, #ff9f4a); }
 
+.siege-monsters-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .siege-monster-card {
-  text-align: center; padding: 18px; border-radius: 18px; margin-bottom: 14px;
-  background: radial-gradient(circle at 50% 20%, rgba(255,107,107,0.12), transparent 70%), rgba(255,255,255,0.03);
+  text-align: center; padding: 12px 8px; border-radius: 14px;
+  background: radial-gradient(circle at 50% 15%, rgba(255,107,107,0.12), transparent 70%), rgba(255,255,255,0.03);
   border: 2px solid rgba(255,107,107,0.3);
 }
 .siege-monster-card.mini { border-color: rgba(255,209,102,0.5); }
-.siege-monster-card.boss { border-color: rgba(179,136,255,0.6); box-shadow: 0 0 24px rgba(179,136,255,0.25); }
-.siege-monster-icon { font-size: 4rem; filter: drop-shadow(0 0 16px rgba(255,107,107,0.5)); }
-.siege-monster-name { font-weight: 900; color: #e6ecf7; margin: 6px 0 4px; }
-.siege-monster-sub { font-size: 0.7rem; color: #9fb3d1; }
-.siege-atk-timer { font-size: 0.76rem; color: #ffd166; font-weight: 800; margin-top: 6px; }
+.siege-monster-card.boss { border-color: rgba(179,136,255,0.6); box-shadow: 0 0 20px rgba(179,136,255,0.25); }
+.siege-monster-card.dead { opacity: 0.35; filter: grayscale(0.6); }
+.siege-monster-icon { font-size: 2.2rem; filter: drop-shadow(0 0 12px rgba(255,107,107,0.5)); }
+.siege-monster-name { font-weight: 800; color: #e6ecf7; font-size: 0.7rem; margin: 4px 0 2px; }
+.siege-monster-sub { font-size: 0.62rem; color: #9fb3d1; }
+.siege-atk-timer { font-size: 0.62rem; color: #ffd166; font-weight: 800; margin-top: 4px; }
 
-.siege-supply-row { text-align: center; font-size: 0.9rem; font-weight: 800; margin-bottom: 10px; }
+.siege-supply-row { text-align: center; font-size: 0.9rem; font-weight: 800; margin-bottom: 12px; }
 .siege-supply-row .ok { color: #6ee7a8; }
 .siege-supply-row .bad { color: #ff6b6b; }
 
-.siege-plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
-.siege-plant-btn { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 8px 4px; cursor: pointer; color: #e6ecf7; font-size: 1.3rem; text-align: center; }
-.siege-plant-btn.on { border-color: #6ee7a8; background: rgba(110,231,168,0.1); }
-.siege-plant-name { font-size: 0.62rem; font-weight: 700; margin-top: 2px; }
-.siege-plant-sub { font-size: 0.58rem; color: #9fb3d1; margin-top: 2px; }
+.siege-grid-section { margin-bottom: 14px; }
+.siege-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-width: 320px; margin: 0 auto 10px; }
+.siege-cell {
+  aspect-ratio: 1; border-radius: 10px; border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03); cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.siege-cell.empty { border-style: dashed; }
+.siege-cell:not(.empty) { border-color: var(--rarity-color, #555); box-shadow: 0 0 8px color-mix(in srgb, var(--rarity-color, #555) 35%, transparent); }
+.siege-cell.selected { outline: 3px solid #ffd166; outline-offset: 1px; }
+.siege-cell-icon { font-size: 1.4rem; }
+.siege-cell-lv { font-size: 0.58rem; font-weight: 800; color: #ffd166; margin-top: 1px; }
+.siege-roll-btn { display: block; margin: 0 auto; padding: 10px 26px; }
 
 .siege-skill-row { display: flex; gap: 10px; justify-content: center; }
 
